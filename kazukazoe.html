@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>かずをかぞえてみよう</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800;900&display=swap');
+
+:root{
+  --bg:#fff8f0;
+  --sky:#e8f4ff;
+  --pink:#ffb3d1;
+  --yellow:#ffe066;
+  --mint:#b3f0e0;
+  --peach:#ffcba4;
+  --purple:#d4b3ff;
+  --coral:#ff8c7a;
+  --blue:#7ac4ff;
+  --green:#6ddfb0;
+  --text:#3a2a1a;
+  --soft:#8a7060;
+  --white:#ffffff;
+}
+*{box-sizing:border-box;margin:0;padding:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:'M PLUS Rounded 1c',sans-serif;color:var(--text);}
+
+/* ── CLOUD BG ── */
+#bg-layer{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+  background:linear-gradient(180deg,#dff0ff 0%,#fff8f0 60%);}
+.cloud{position:absolute;border-radius:50%;background:#fff;opacity:.7;animation:drift var(--cd,30s) linear infinite;}
+@keyframes drift{from{transform:translateX(-120px)}to{transform:translateX(calc(100vw + 120px))}}
+
+/* ── CANVAS ── */
+#canvas{position:fixed;inset:0;display:flex;flex-direction:column;z-index:5;}
+
+/* ── HUD ── */
+#hud{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 18px 8px;
+  background:linear-gradient(180deg,#ffffffcc 0%,#ffffff00 100%);
+  flex-shrink:0;position:relative;z-index:10;
+}
+#hud-next{display:flex;flex-direction:column;align-items:center;}
+.hud-lbl{font-size:11px;color:var(--soft);letter-spacing:.1em;font-weight:800;}
+#hud-number{
+  font-size:clamp(38px,12vw,72px);font-weight:900;line-height:1;
+  color:#ff5a87;
+  text-shadow:0 3px 0 #ff9ab0,0 0 0 transparent;
+  -webkit-text-stroke:1px #fff;
+}
+#hud-score-wrap{display:flex;flex-direction:column;align-items:center;}
+#hud-score{font-size:clamp(22px,6vw,36px);font-weight:900;color:#7a5af8;text-shadow:0 2px 0 #c5b4ff;}
+#hud-controls{display:flex;gap:8px;}
+.ctrl-btn{
+  width:44px;height:44px;border-radius:50%;border:none;
+  background:var(--white);color:var(--text);font-size:20px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 3px 8px #00000018;
+  transition:transform .15s,box-shadow .15s;
+}
+.ctrl-btn:active{transform:scale(.9);}
+
+/* ── ARENA ── */
+#arena{flex:1;position:relative;overflow:hidden;}
+
+/* ── BUBBLE ── */
+.bubble{
+  position:absolute;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:900;cursor:pointer;user-select:none;
+  transition:transform .08s;
+}
+.bubble:active{transform:scale(.88)!important;}
+
+/* target: always on top, star-glow */
+.bubble.is-target{
+  z-index:50;
+  box-shadow:0 0 0 4px #fff,0 0 0 6px #ff5a87,0 6px 18px #ff5a8766;
+  animation:target-bob 1.4s ease-in-out infinite alternate;
+}
+@keyframes target-bob{from{transform:translateY(0) scale(1)}to{transform:translateY(-6px) scale(1.04)}}
+
+/* decoy: behind target */
+.bubble.is-decoy{z-index:10;}
+
+/* life ring wrapper — sits OUTSIDE the bubble div so border-radius doesn't clip it */
+.life-ring-wrap{
+  position:absolute;
+  pointer-events:none;
+  z-index:51; /* above target bubble */
+  transform:rotate(-90deg);
+  overflow:visible;
+}
+.life-ring-wrap circle{
+  fill:none;stroke-width:6;stroke-linecap:round;
+  transition:stroke-dashoffset .28s linear,stroke .28s;
+}
+.life-ring-wrap .ring-bg{stroke:#ffffff66;}
+.life-ring-wrap .ring-fg{stroke:#6ddfb0;}
+
+/* wrong indicator */
+.wrong-label{
+  position:fixed;left:50%;transform:translateX(-50%);
+  top:18%;z-index:200;pointer-events:none;
+  font-size:clamp(26px,8vw,52px);font-weight:900;
+  color:#ff2255;text-shadow:0 3px 0 #ffb3c5,0 0 20px #ff225566;
+  animation:wrongpop .6s cubic-bezier(.17,.67,.3,1.3) forwards;
+}
+@keyframes wrongpop{
+  0%{opacity:0;transform:translateX(-50%) scale(.5);}
+  40%{opacity:1;transform:translateX(-50%) scale(1.15);}
+  70%{opacity:1;transform:translateX(-50%) scale(1);}
+  100%{opacity:0;transform:translateX(-50%) scale(.8);}
+}
+
+/* spawn/pop */
+.bubble.spawning{animation:bspawn .35s cubic-bezier(.17,.67,.3,1.4) forwards;}
+@keyframes bspawn{from{transform:scale(0) rotate(-20deg);opacity:0;}to{transform:scale(1) rotate(0);opacity:1;}}
+.bubble.fade-out{animation:bfade .6s ease forwards;pointer-events:none;}
+@keyframes bfade{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.5)}}
+
+/* particle for correct pop */
+.particle{
+  position:fixed;border-radius:50%;pointer-events:none;z-index:300;
+  animation:particleFly var(--pd,.7s) ease-out forwards;
+}
+@keyframes particleFly{
+  0%{transform:translate(0,0) scale(1);opacity:1;}
+  100%{transform:translate(var(--px),var(--py)) scale(0);opacity:0;}
+}
+
+/* ── OVERLAYS ── */
+.overlay{
+  position:fixed;inset:0;z-index:100;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:18px;padding:28px;text-align:center;
+  transition:opacity .3s;
+}
+.overlay.hidden{opacity:0;pointer-events:none;}
+
+/* ── TOP ── */
+#ov-top{background:linear-gradient(160deg,#ffe0f0 0%,#e0f0ff 50%,#e8ffe0 100%);}
+.top-cloud{font-size:2.8rem;animation:float-d 2.8s ease-in-out infinite alternate;}
+.top-cloud:nth-child(2){animation-delay:.6s}.top-cloud:nth-child(3){animation-delay:1.2s}
+@keyframes float-d{from{transform:translateY(0) rotate(-4deg)}to{transform:translateY(-12px) rotate(4deg)}}
+.title-jp{
+  font-size:clamp(26px,7vw,52px);font-weight:900;
+  color:#ff5a87;
+  text-shadow:0 4px 0 #ffb3c8;
+  letter-spacing:.04em;line-height:1.2;
+}
+.title-en{font-size:clamp(11px,3vw,16px);color:#a090b0;letter-spacing:.2em;text-transform:uppercase;font-weight:800;margin-top:-8px;}
+.sec-lbl{font-size:clamp(11px,3vw,14px);color:var(--soft);letter-spacing:.1em;font-weight:800;margin-bottom:6px;}
+.level-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+.level-btn{
+  padding:10px 16px;border-radius:20px;border:3px solid #e0d0ff;
+  font-family:inherit;font-size:clamp(12px,3.2vw,14px);font-weight:900;cursor:pointer;
+  background:#fff;color:#7a5af8;
+  transition:all .2s;line-height:1.4;
+  box-shadow:0 3px 0 #d0b8ff;
+}
+.level-btn.active,.level-btn:hover{background:#7a5af8;color:#fff;border-color:#7a5af8;box-shadow:0 3px 0 #5a3ab8;}
+.lang-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+.lang-btn{
+  padding:16px 30px;border-radius:999px;border:none;
+  font-family:inherit;font-size:clamp(15px,4.5vw,21px);font-weight:900;cursor:pointer;
+  transition:transform .15s,filter .15s;
+  box-shadow:0 5px 0 #0002;
+}
+.lang-btn:active{transform:scale(.94) translateY(3px);box-shadow:0 2px 0 #0002;}
+.lang-btn.jp{background:linear-gradient(135deg,#ff8fb3,#ff5a87);color:#fff;}
+.lang-btn.en{background:linear-gradient(135deg,#7ac4ff,#4a9eff);color:#fff;}
+.lang-btn:hover{filter:brightness(1.08);}
+
+/* ── CHECKPOINT (praise) ── */
+#ov-check{background:linear-gradient(160deg,#fff3e0 0%,#e8ffe0 100%);}
+#ov-check .chk-icon{font-size:clamp(56px,16vw,100px);animation:iconpop .7s cubic-bezier(.17,.67,.3,1.4);}
+@keyframes iconpop{from{transform:scale(0) rotate(-15deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+#chk-msg{font-size:clamp(18px,5.5vw,36px);font-weight:900;color:#ff5a87;text-shadow:0 3px 0 #ffb3c8;}
+#chk-sub{font-size:clamp(13px,3.5vw,18px);color:var(--soft);max-width:300px;}
+.chk-btn{
+  padding:14px 36px;border-radius:999px;border:none;
+  font-family:inherit;font-size:clamp(14px,4vw,20px);font-weight:900;cursor:pointer;
+  box-shadow:0 5px 0 #0002;transition:transform .15s;
+}
+.chk-btn:active{transform:scale(.94) translateY(3px);box-shadow:0 2px 0 #0002;}
+.chk-btn.cont{background:linear-gradient(135deg,#6ddfb0,#3ab88a);color:#fff;}
+.chk-btn.home{background:linear-gradient(135deg,#ffb3c8,#ff5a87);color:#fff;}
+
+/* ── PAUSE ── */
+#ov-pause{background:#ffffffdd;backdrop-filter:blur(8px);}
+#ov-pause h2{font-size:clamp(22px,6vw,44px);font-weight:900;color:#7a5af8;}
+.ov-btn{
+  padding:14px 36px;border-radius:999px;border:none;
+  font-family:inherit;font-size:clamp(14px,4vw,20px);font-weight:900;cursor:pointer;
+  box-shadow:0 5px 0 #0002;transition:transform .15s;
+}
+.ov-btn:active{transform:scale(.94) translateY(3px);box-shadow:0 2px 0 #0002;}
+.ov-btn.resume{background:linear-gradient(135deg,#6ddfb0,#3ab88a);color:#fff;}
+.ov-btn.quit{background:linear-gradient(135deg,#ffb3c8,#ff5a87);color:#fff;}
+
+/* ── GAMEOVER ── */
+#ov-gameover{background:linear-gradient(160deg,#ffe0e0 0%,#fff5f0 100%);}
+#ov-gameover .go-icon{font-size:clamp(56px,16vw,100px);animation:iconpop .7s cubic-bezier(.17,.67,.3,1.4);}
+#ov-gameover .go-title{font-size:clamp(20px,6vw,40px);font-weight:900;color:#ff2255;}
+#ov-gameover .go-reached{font-size:clamp(14px,4vw,22px);font-weight:900;color:#7a5af8;}
+#ov-gameover .go-sub{font-size:clamp(13px,3.5vw,18px);color:var(--soft);max-width:280px;}
+
+/* ── END ── */
+#ov-end{background:linear-gradient(160deg,#fffbe0 0%,#e0ffe8 100%);}
+#ov-end .trophy{font-size:clamp(64px,18vw,120px);animation:iconpop .9s cubic-bezier(.17,.67,.3,1.4);}
+#ov-end .end-stars{font-size:clamp(28px,8vw,52px);animation:iconpop .8s .5s both;}
+#end-msg{font-size:clamp(18px,5.5vw,36px);font-weight:900;color:#ff5a87;text-shadow:0 3px 0 #ffb3c8;}
+#end-sub{font-size:clamp(12px,3.2vw,17px);color:var(--soft);max-width:300px;}
+.end-back{
+  padding:14px 36px;border-radius:999px;border:none;
+  font-family:inherit;font-size:clamp(14px,4vw,20px);font-weight:900;cursor:pointer;
+  background:linear-gradient(135deg,#ffb3c8,#ff5a87);color:#fff;
+  box-shadow:0 5px 0 #cc3060;transition:transform .15s;
+}
+.end-back:active{transform:scale(.94) translateY(3px);}
+
+/* confetti */
+.conf{position:fixed;top:-20px;pointer-events:none;z-index:999;animation:fall linear forwards;}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:0;}}
+</style>
+</head>
+<body>
+
+<div id="bg-layer"></div>
+
+<div id="canvas">
+  <div id="hud">
+    <div id="hud-next">
+      <div class="hud-lbl" id="lbl-next">つぎは</div>
+      <div id="hud-number">—</div>
+    </div>
+    <div id="hud-score-wrap">
+      <div class="hud-lbl" id="lbl-score">スコア</div>
+      <div id="hud-score">—</div>
+    </div>
+    <div id="hud-controls">
+      <button class="ctrl-btn" onclick="pauseGame()">⏸</button>
+      <button class="ctrl-btn" onclick="confirmQuit()">🏠</button>
+    </div>
+  </div>
+  <div id="arena"></div>
+</div>
+
+<!-- TOP -->
+<div class="overlay" id="ov-top">
+  <div style="display:flex;gap:12px;">
+    <span class="top-cloud">🌸</span><span class="top-cloud">⭐</span><span class="top-cloud">🌈</span>
+  </div>
+  <div class="title-jp">かずをかぞえてみよう</div>
+  <div class="title-en">Let's Count Numbers!</div>
+  <div>
+    <div class="sec-lbl">レベル / Level</div>
+    <div class="level-row">
+      <button class="level-btn active" data-level="1">🐢 ゆっくり<br><small>〜20</small></button>
+      <button class="level-btn" data-level="2">🐇 はやめ<br><small>〜100</small></button>
+      <button class="level-btn" data-level="3">⚡ はやい<br><small>〜500</small></button>
+    </div>
+  </div>
+  <div>
+    <div class="sec-lbl">ことばを選んでね / Language</div>
+    <div class="lang-row">
+      <button class="lang-btn jp" onclick="startGame('ja')">🇯🇵 にほんご</button>
+      <button class="lang-btn en" onclick="startGame('en')">🇺🇸 English</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHECKPOINT (praise) -->
+<div class="overlay hidden" id="ov-check">
+  <div class="chk-icon">🌟</div>
+  <div id="chk-msg">すごい！10までかぞえられたね！</div>
+  <div id="chk-sub">すばらしい！つづけてみよう！</div>
+  <button class="chk-btn cont" onclick="continueGame()">▶ つづける</button>
+  <button class="chk-btn home" onclick="backToTop()">🏠 さいしょにもどる</button>
+</div>
+
+<!-- PAUSE -->
+<div class="overlay hidden" id="ov-pause">
+  <h2>⏸ <span id="pause-title">いちじていし</span></h2>
+  <button class="ov-btn resume" id="btn-resume" onclick="resumeGame()">▶ つづける</button>
+  <button class="ov-btn quit" onclick="confirmQuit()">🏠 おわる</button>
+</div>
+
+<!-- GAMEOVER -->
+<div class="overlay hidden" id="ov-gameover">
+  <div class="go-icon">⏰</div>
+  <div class="go-title" id="go-title">まにあわなかった！</div>
+  <div class="go-reached" id="go-reached"></div>
+  <div class="go-sub" id="go-sub">また挑戦してみてね！</div>
+  <button class="end-back" onclick="backToTop()">🏠 もどる</button>
+</div>
+
+<!-- END -->
+<div class="overlay hidden" id="ov-end">
+  <div class="trophy">🏆</div>
+  <div class="end-stars">⭐⭐⭐</div>
+  <div id="end-msg"></div>
+  <div id="end-sub"></div>
+  <button class="end-back" onclick="backToTop()">🏠 もどる</button>
+</div>
+
+<script>
+/* ── CLOUD BG ── */
+(()=>{
+  const bg=document.getElementById('bg-layer');
+  const shapes=[
+    {w:120,h:60,top:8},{w:80,h:40,top:20},{w:150,h:70,top:5},
+    {w:90,h:45,top:30},{w:110,h:55,top:15},{w:70,h:35,top:25},
+  ];
+  shapes.forEach((s,i)=>{
+    const c=document.createElement('div');c.className='cloud';
+    const dur=20+Math.random()*25;
+    c.style.cssText=`width:${s.w}px;height:${s.h}px;top:${s.top}%;left:${-s.w-20}px;--cd:${dur.toFixed(1)}s;animation-delay:${(Math.random()*dur).toFixed(1)}s;`;
+    bg.appendChild(c);
+  });
+})();
+
+/* ── LEVEL CONFIG ──
+  milestone : checkpoint every N correct answers
+  targetLife: seconds target bubble lives (game over on expiry)
+  decoyLife : seconds a decoy lives before fading
+  speed     : movement speed
+  maxDecoys : max decoys on screen simultaneously
+  decoyInterval: ms between spawns
+*/
+const LEVELS={
+  1:{max:20,  milestone:10, targetLife:14, decoyLife:6,  speed:.38, maxDecoys:3, decoyInterval:2500},
+  2:{max:100, milestone:20, targetLife:10, decoyLife:4.5,speed:.72, maxDecoys:5, decoyInterval:1900},
+  3:{max:500, milestone:50, targetLife:8,  decoyLife:3.5,speed:1.05,maxDecoys:7, decoyInterval:1500},
+};
+
+/* Pastel bubble palette */
+const BCOLORS=[
+  {bg:'#ffb3d1',shadow:'#e07090',text:'#7a0040'},
+  {bg:'#ffe066',shadow:'#c8a800',text:'#5a4000'},
+  {bg:'#b3f0e0',shadow:'#40c095',text:'#005040'},
+  {bg:'#d4b3ff',shadow:'#9060e0',text:'#3a0080'},
+  {bg:'#7ac4ff',shadow:'#3080d0',text:'#003060'},
+  {bg:'#ffcba4',shadow:'#e07030',text:'#5a2000'},
+  {bg:'#b3e8ff',shadow:'#3090c0',text:'#003050'},
+  {bg:'#c8ffb3',shadow:'#40c040',text:'#005000'},
+  {bg:'#ffb3b3',shadow:'#e04040',text:'#600000'},
+  {bg:'#e8d4ff',shadow:'#9060c0',text:'#300060'},
+];
+
+/* ── STATE ── */
+let lang='ja',level=1,currentTarget=1,maxNumber=20,score=0;
+let bubbles=[],usedDecoys=new Set();
+let gameActive=false,isPaused=false,isCheckpoint=false;
+let arenaW=0,arenaH=0;
+let animId=null,decoyTimer=null;
+const synth=window.speechSynthesis;
+
+/* ── LEVEL BUTTONS ── */
+document.querySelectorAll('.level-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');level=parseInt(btn.dataset.level);
+  });
+});
+
+/* ── OVERLAYS ── */
+const OVS=['ov-top','ov-check','ov-pause','ov-gameover','ov-end'];
+function showOverlay(id){OVS.forEach(o=>document.getElementById(o).classList.toggle('hidden',o!==id));}
+function hideAllOverlays(){OVS.forEach(o=>document.getElementById(o).classList.add('hidden'));}
+
+/* ── HUD ── */
+function updateHUD(){
+  document.getElementById('hud-number').textContent=gameActive?currentTarget:'—';
+  document.getElementById('hud-score').textContent =gameActive?score:'—';
+  document.getElementById('lbl-next').textContent  =lang==='ja'?'つぎは':'Next:';
+  document.getElementById('lbl-score').textContent =lang==='ja'?'スコア':'Score';
+}
+
+/* ── SPEAK ── */
+function speak(text,rate=.95,pitch=1.2){
+  if(!synth)return;synth.cancel();
+  const u=new SpeechSynthesisUtterance(String(text));
+  u.lang=lang==='ja'?'ja-JP':'en-US';u.rate=rate;u.pitch=pitch;
+  synth.speak(u);
+}
+
+/* ── ARENA SIZE ── */
+function measureArena(){
+  const r=document.getElementById('arena').getBoundingClientRect();
+  arenaW=r.width;arenaH=r.height;
+}
+
+/* ── BUBBLE SIZE ── */
+function bSize(){return level===1?86:level===2?74:60;}
+
+/* ── MAKE BUBBLE ── */
+function makeBubble(num,isTarget){
+  const size=bSize();
+  // safe placement: avoid edges
+  const margin=size+6;
+  const x=margin+Math.random()*(arenaW-margin*2);
+  const y=margin+Math.random()*(arenaH-margin*2);
+  const spd=LEVELS[level].speed;
+  let vx=(Math.random()-.5)*spd*2.2; if(Math.abs(vx)<.25)vx=.25*(vx<0?-1:1);
+  let vy=(Math.random()-.5)*spd*2.2; if(Math.abs(vy)<.25)vy=.25*(vy<0?-1:1);
+  const fs=size>80?28:size>70?24:19;
+
+  const col=BCOLORS[Math.floor(Math.random()*BCOLORS.length)];
+
+  const el=document.createElement('div');
+  el.className='bubble '+(isTarget?'is-target':'is-decoy')+' spawning';
+  el.style.cssText=`
+    width:${size}px;height:${size}px;
+    left:${x}px;top:${y}px;
+    background:${col.bg};
+    font-size:${fs}px;color:${col.text};
+    box-shadow:0 5px 0 ${col.shadow},0 8px 16px #00000022;
+  `;
+  el.textContent=num;
+
+  // life ring SVG lives OUTSIDE the bubble so border-radius doesn't clip it
+  let ringEl=null;
+  if(isTarget){
+    const pad=10;
+    const totalSize=size+pad*2;
+    const cx=totalSize/2; const cy=totalSize/2;
+    const r=size/2+pad/2;
+    const circ=+(2*Math.PI*r).toFixed(3);
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('class','life-ring-wrap');
+    svg.setAttribute('width',String(totalSize));
+    svg.setAttribute('height',String(totalSize));
+    svg.setAttribute('viewBox',`0 0 ${totalSize} ${totalSize}`);
+    svg.style.cssText=`position:absolute;left:${x-pad}px;top:${y-pad}px;`;
+    svg.innerHTML=`<circle class="ring-bg" cx="${cx}" cy="${cy}" r="${r}" stroke-dasharray="${circ}" stroke-dashoffset="0"/><circle class="ring-fg" cx="${cx}" cy="${cy}" r="${r}" stroke-dasharray="${circ}" stroke-dashoffset="0"/>`;
+    document.getElementById('arena').appendChild(svg);
+    ringEl=svg;
+  }
+
+  el.addEventListener('pointerdown',e=>{
+    e.preventDefault();
+    if(!gameActive||isPaused||isCheckpoint||obj.dying)return;
+    onTap(obj,num);
+  });
+
+  document.getElementById('arena').appendChild(el);
+  setTimeout(()=>el.classList.remove('spawning'),350);
+
+  const cfg=LEVELS[level];
+  const obj={
+    el,ringEl,x,y,vx,vy,size,num,isTarget,
+    born:performance.now(),
+    life:(isTarget?cfg.targetLife:cfg.decoyLife)*1000,
+    dying:false,
+    col,
+    _ringPad:isTarget?10:0
+  };
+  bubbles.push(obj);
+  if(!isTarget)usedDecoys.add(num);
+  return obj;
+}
+
+/* ── FADE decoy or expired target ── */
+function fadeDecoy(obj,cb){
+  if(obj.dying)return;
+  obj.dying=true;
+  obj.el.classList.add('fade-out');
+  if(obj.ringEl){obj.ringEl.style.transition='opacity .6s';obj.ringEl.style.opacity='0';}
+  setTimeout(()=>{
+    obj.el.remove();
+    if(obj.ringEl)obj.ringEl.remove();
+    bubbles=bubbles.filter(b=>b!==obj);
+    usedDecoys.delete(obj.num);
+    if(cb)cb();
+  },600);
+}
+
+/* ── BURST particles on correct ── */
+function burstAt(cx,cy,color){
+  const PTCL=[
+    '🌟','✨','💫','⭐','🌸','💖','🎉','🎊','💛','💚','💙','💜'
+  ];
+  // emoji particles
+  for(let i=0;i<10;i++){
+    const p=document.createElement('div');
+    p.className='particle';
+    const angle=Math.random()*Math.PI*2;
+    const dist=60+Math.random()*80;
+    const px=Math.cos(angle)*dist;const py=Math.sin(angle)*dist;
+    const dur=(.5+Math.random()*.4).toFixed(2);
+    p.textContent=PTCL[Math.floor(Math.random()*PTCL.length)];
+    p.style.cssText=`
+      font-size:${16+Math.random()*14}px;
+      left:${cx}px;top:${cy}px;
+      --px:${px}px;--py:${py}px;--pd:${dur}s;
+      background:transparent;
+      display:flex;align-items:center;justify-content:center;
+    `;
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(),(parseFloat(dur)+.1)*1000);
+  }
+  // colour dots
+  const dotCols=['#ff5a87','#ffe066','#6ddfb0','#7ac4ff','#d4b3ff','#ff8c7a'];
+  for(let i=0;i<14;i++){
+    const p=document.createElement('div');p.className='particle';
+    const angle=Math.random()*Math.PI*2;
+    const dist=50+Math.random()*70;
+    const dur=(.4+Math.random()*.5).toFixed(2);
+    const w=8+Math.random()*10;
+    p.style.cssText=`
+      width:${w}px;height:${w}px;
+      left:${cx}px;top:${cy}px;
+      background:${dotCols[Math.floor(Math.random()*dotCols.length)]};
+      --px:${Math.cos(angle)*dist}px;--py:${Math.sin(angle)*dist}px;--pd:${dur}s;
+      border-radius:50%;
+    `;
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(),(parseFloat(dur)+.1)*1000);
+  }
+}
+
+/* ── WRONG feedback ── */
+function showWrongLabel(){
+  const existing=document.querySelector('.wrong-label');
+  if(existing)existing.remove();
+  const lbl=document.createElement('div');lbl.className='wrong-label';
+  lbl.textContent=lang==='ja'?'ちがうよ！':'Not yet! ✖';
+  document.body.appendChild(lbl);
+  setTimeout(()=>lbl.remove(),620);
+}
+
+/* ── PICK DECOY ──
+   Excludes: currentTarget itself, numbers within ±10 of currentTarget,
+   and any number already visible on screen.
+*/
+function pickDecoy(){
+  // build full exclusion set: all on-screen numbers + ±10 zone around target
+  const onScreen=new Set(bubbles.map(b=>b.num));
+  const ZONE=10;
+  function excluded(n){
+    if(n===currentTarget)return true;
+    if(Math.abs(n-currentTarget)<=ZONE)return true;
+    if(onScreen.has(n))return true;
+    return false;
+  }
+  // try random picks first (fast path)
+  for(let a=0;a<120;a++){
+    const lo=Math.max(1,currentTarget-40);
+    const hi=Math.min(maxNumber,currentTarget+60);
+    const n=Math.floor(Math.random()*(hi-lo+1))+lo;
+    if(!excluded(n))return n;
+  }
+  // fallback: full scan
+  for(let n=1;n<=maxNumber;n++){
+    if(!excluded(n))return n;
+  }
+  return null; // no valid decoy available (very late in level 1)
+}
+
+function trySpawnDecoy(){
+  if(!gameActive||isPaused||isCheckpoint)return;
+  const cfg=LEVELS[level];
+  if(bubbles.filter(b=>!b.isTarget).length>=cfg.maxDecoys)return;
+  const n=pickDecoy();if(n!==null)makeBubble(n,false);
+}
+
+function startDecoySpawner(){
+  if(decoyTimer)clearInterval(decoyTimer);
+  // stagger initial decoys
+  const stagger=[500,1100,1800,2700,3800,5000,6500];
+  stagger.slice(0,LEVELS[level].maxDecoys).forEach(d=>setTimeout(()=>{if(gameActive)trySpawnDecoy();},d));
+  decoyTimer=setInterval(trySpawnDecoy,LEVELS[level].decoyInterval);
+}
+
+/* ── ON TAP ── */
+function onTap(obj,num){
+  if(num===currentTarget){
+    // ✅ CORRECT
+    const rect=obj.el.getBoundingClientRect();
+    const cx=rect.left+rect.width/2;
+    const cy=rect.top+rect.height/2;
+
+    speak(num);
+    obj.dying=true;
+    obj.el.style.transition='transform .15s,opacity .15s';
+    obj.el.style.transform='scale(1.4)';
+    obj.el.style.opacity='0';
+    if(obj.ringEl){obj.ringEl.style.transition='opacity .15s';obj.ringEl.style.opacity='0';}
+    burstAt(cx,cy,obj.col.bg);
+    setTimeout(()=>{
+      obj.el.remove();
+      if(obj.ringEl)obj.ringEl.remove();
+      bubbles=bubbles.filter(b=>b!==obj);
+      score++;
+      currentTarget++;
+      updateHUD();
+
+      if(currentTarget>maxNumber){endGame();return;}
+
+      // milestone checkpoint?
+      const m=LEVELS[level].milestone;
+      if((currentTarget-1)%m===0&&currentTarget-1>0){
+        doCheckpoint(currentTarget-1);
+        return;
+      }
+
+      // spawn next target
+      makeBubble(currentTarget,true);
+    },150);
+
+  } else {
+    // ✖ WRONG — no game over, just feedback
+    showWrongLabel();
+    // shake the bubble
+    obj.el.style.animation='none';
+    obj.el.style.transform='translateX(-8px)';
+    setTimeout(()=>{obj.el.style.transform='translateX(8px)';},80);
+    setTimeout(()=>{obj.el.style.transform='translateX(-5px)';},160);
+    setTimeout(()=>{obj.el.style.transform='translateX(5px)';},240);
+    setTimeout(()=>{
+      obj.el.style.transform='';
+      if(!obj.isTarget)obj.el.style.animation='';
+      else obj.el.style.animation='target-bob 1.4s ease-in-out infinite alternate';
+    },320);
+  }
+}
+
+/* ── CHECKPOINT ── */
+function doCheckpoint(reached){
+  isCheckpoint=true;
+  pauseBubbleTimers();
+  const isJa=lang==='ja';
+  document.getElementById('chk-msg').textContent=
+    isJa?`すごい！${reached}までかぞえられたね！🎉`:`Amazing! You counted to ${reached}! 🎉`;
+  document.getElementById('chk-sub').textContent=
+    isJa?'きみはすごい！つづけてみよう！':"You're awesome! Keep going!";
+  showOverlay('ov-check');
+  spawnConfetti(40);
+  speak(isJa?`すごい！${reached}までかぞえられたね！`:`Amazing! You counted to ${reached}!`,.9,1.2);
+}
+
+function continueGame(){
+  hideAllOverlays();
+  resumeBubbleTimers();
+  isCheckpoint=false;
+  makeBubble(currentTarget,true);
+}
+
+/* ── PAUSE / RESUME ── */
+function pauseGame(){
+  if(!gameActive||isCheckpoint)return;
+  isPaused=true;
+  pauseBubbleTimers();
+  const isJa=lang==='ja';
+  document.getElementById('pause-title').textContent=isJa?'いちじていし':'Paused';
+  document.getElementById('btn-resume').textContent =isJa?'▶ つづける':'▶ Resume';
+  showOverlay('ov-pause');
+}
+function resumeGame(){
+  resumeBubbleTimers();
+  isPaused=false;hideAllOverlays();
+}
+
+function pauseBubbleTimers(){
+  const now=performance.now();
+  bubbles.forEach(b=>{b._pauseAt=now;});
+}
+function resumeBubbleTimers(){
+  const now=performance.now();
+  bubbles.forEach(b=>{
+    if(b._pauseAt!=null){b.born+=now-b._pauseAt;delete b._pauseAt;}
+  });
+}
+
+/* ── QUIT ── */
+function confirmQuit(){stopAll();backToTop();}
+function stopAll(){
+  synth.cancel();
+  clearInterval(decoyTimer);decoyTimer=null;
+  if(animId)cancelAnimationFrame(animId);animId=null;
+  gameActive=false;isPaused=false;isCheckpoint=false;
+}
+function backToTop(){
+  stopAll();
+  document.getElementById('arena').innerHTML='';
+  bubbles=[];usedDecoys=new Set();score=0;
+  updateHUD();showOverlay('ov-top');
+}
+
+/* ── GAME OVER (target expired) ── */
+function gameOver(){
+  if(!gameActive)return;stopAll();
+  const isJa=lang==='ja';
+  document.getElementById('go-title').textContent  =isJa?'まにあわなかった！':'Time ran out!';
+  document.getElementById('go-reached').textContent=isJa?`${currentTarget}まで来たよ！`:`You reached ${currentTarget}!`;
+  document.getElementById('go-sub').textContent    =isJa?'また挑戦してみてね！':'Try again!';
+  showOverlay('ov-gameover');
+  speak(isJa?'ざんねん！またちょうせんしてね！':'Time is up! Try again!',.9,1.1);
+}
+
+/* ── END (full clear) ── */
+function endGame(){
+  stopAll();
+  const isJa=lang==='ja';
+  document.getElementById('end-msg').textContent=isJa?`すごい！${maxNumber}まで全部できたよ！🎉`:`Amazing! You counted to ${maxNumber}! 🎉`;
+  document.getElementById('end-sub').textContent=isJa?'きみはかずのてんさい！おめでとう！':"You're a number genius! Congratulations!";
+  showOverlay('ov-end');
+  spawnConfetti(90);
+  setTimeout(()=>speak(isJa?'すごい！ぜんぶできたよ！おめでとう！':'Amazing! Congratulations!',.9,1.2),500);
+}
+
+/* ── START ── */
+function startGame(language){
+  lang=language;
+  const cfg=LEVELS[level];
+  maxNumber=cfg.max;currentTarget=1;score=0;
+  isPaused=false;isCheckpoint=false;gameActive=true;
+  bubbles=[];usedDecoys=new Set();
+  document.getElementById('arena').innerHTML='';
+  hideAllOverlays();measureArena();
+  updateHUD();
+  makeBubble(currentTarget,true);
+  startDecoySpawner();
+  startAnim();
+}
+
+/* ── ANIMATION LOOP ── */
+function startAnim(){
+  if(animId)cancelAnimationFrame(animId);
+  function frame(now){
+    if(gameActive&&!isPaused&&!isCheckpoint){
+      const expire=[];
+      bubbles.forEach(b=>{
+        if(b.dying||b._pauseAt!=null)return;
+        // move
+        b.x+=b.vx;b.y+=b.vy;
+        if(b.x<0){b.x=0;b.vx=Math.abs(b.vx);}
+        if(b.y<0){b.y=0;b.vy=Math.abs(b.vy);}
+        if(b.x+b.size>arenaW){b.x=arenaW-b.size;b.vx=-Math.abs(b.vx);}
+        if(b.y+b.size>arenaH){b.y=arenaH-b.size;b.vy=-Math.abs(b.vy);}
+        b.el.style.left=b.x+'px';
+        b.el.style.top =b.y+'px';
+        // move ring SVG in sync with bubble
+        if(b.ringEl){
+          b.ringEl.style.left=(b.x-b._ringPad)+'px';
+          b.ringEl.style.top =(b.y-b._ringPad)+'px';
+        }
+
+        // life progress
+        const elapsed=now-b.born;
+        const ratio=Math.max(0,1-elapsed/b.life);
+
+        if(b.isTarget){
+          // update life ring via ringEl
+          if(b.ringEl){
+            const r=b.size/2+b._ringPad/2;
+            const circ=2*Math.PI*r;
+            const fg=b.ringEl.querySelector('.ring-fg');
+            if(fg){
+              fg.style.strokeDashoffset=circ*(1-ratio);
+              fg.style.stroke=ratio>.5?'#6ddfb0':ratio>.25?'#ffe066':'#ff2255';
+            }
+          }
+          if(elapsed>=b.life)expire.push({b,go:true});
+        } else {
+          if(elapsed>=b.life)expire.push({b,go:false});
+        }
+      });
+      expire.forEach(({b,go})=>{
+        if(go){fadeDecoy(b,()=>gameOver());}
+        else fadeDecoy(b,null);
+      });
+    }
+    animId=requestAnimationFrame(frame);
+  }
+  animId=requestAnimationFrame(frame);
+}
+
+/* ── CONFETTI ── */
+function spawnConfetti(n=60){
+  const cols=['#ff5a87','#ffe066','#6ddfb0','#7ac4ff','#d4b3ff','#ffcba4','#ff8c7a'];
+  for(let i=0;i<n;i++) setTimeout(()=>{
+    const c=document.createElement('div');c.className='conf';
+    const w=6+Math.random()*10;
+    c.style.cssText=`left:${Math.random()*100}vw;background:${cols[~~(Math.random()*cols.length)]};width:${w}px;height:${w}px;border-radius:${Math.random()>.4?'50%':'4px'};animation-duration:${(1.8+Math.random()*2).toFixed(1)}s;animation-delay:${(Math.random()*.5).toFixed(2)}s;`;
+    document.body.appendChild(c);setTimeout(()=>c.remove(),4500);
+  },i*28);
+}
+
+/* ── RESIZE ── */
+window.addEventListener('resize',measureArena);
+
+/* ── INIT ── */
+showOverlay('ov-top');
+</script>
+</body>
+</html>

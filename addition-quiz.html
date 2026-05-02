@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>たしざんクイズ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rounded+Mplus+1c:wght@400;700;800&display=swap');
+
+  :root {
+    --blue: #4aa8e8;
+    --green: #5cc87a;
+    --orange: #ff8c42;
+    --pink: #ff6b9d;
+    --purple: #9b7fe8;
+    --red: #ff3b3b;
+    --yellow: #ffd84d;
+    --ball1: #ff6b6b;
+    --ball2: #4ecdc4;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Rounded Mplus 1c', sans-serif;
+    background: linear-gradient(160deg, #e0f4ff 0%, #f5e6ff 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 8px;
+  }
+
+  .screen {
+    display: none;
+    width: 100%;
+    max-width: 420px;
+    flex-direction: column;
+    align-items: center;
+  }
+  .screen.active { display: flex; }
+
+  /* ══ TOP PAGE ══ */
+  #topScreen { gap: 26px; text-align: center; }
+
+  .top-deco {
+    font-size: 72px;
+    animation: floatY 2.5s ease-in-out infinite;
+  }
+  @keyframes floatY {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-12px); }
+  }
+
+  .top-title {
+    font-size: 38px;
+    font-weight: 800;
+    color: var(--blue);
+    text-shadow: 0 3px 0 rgba(74,168,232,0.2);
+    line-height: 1.2;
+  }
+  .top-sub {
+    font-size: 19px;
+    font-weight: 700;
+    color: #999;
+    margin-top: 8px;
+  }
+
+  .top-balls {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+  }
+  .top-ball {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    animation: floatY 2s ease-in-out infinite;
+  }
+  .top-ball:nth-child(2) { animation-delay: 0.3s; }
+  .top-ball:nth-child(3) { animation-delay: 0.6s; }
+  .top-ball:nth-child(4) { animation-delay: 0.9s; }
+
+  .start-btn {
+    padding: 18px 0;
+    width: 100%; max-width: 280px;
+    border: none; border-radius: 22px;
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    color: white;
+    font-family: inherit; font-size: 24px; font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 6px 0 #3070bb;
+    transition: all 0.15s;
+    letter-spacing: 2px;
+  }
+  .start-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #3070bb; }
+
+  /* ══ QUIZ SCREEN ══ */
+  #quizScreen { gap: 7px; }
+
+  .score-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+  .score-badge {
+    background: white;
+    border-radius: 12px;
+    padding: 4px 14px;
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--blue);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+    white-space: nowrap;
+  }
+  .score-badge span { color: var(--orange); font-size: 20px; }
+
+  .mode-bar { display: flex; gap: 5px; }
+  .mode-btn {
+    padding: 5px 8px;
+    border: 3px solid transparent;
+    border-radius: 12px;
+    font-family: inherit; font-size: 10px; font-weight: 800;
+    cursor: pointer; transition: all 0.2s;
+    background: white; color: #888;
+  }
+  .mode-btn.active { color: white; }
+  .mode-btn:nth-child(1).active { background: var(--blue); }
+  .mode-btn:nth-child(2).active { background: var(--orange); }
+
+  .question-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+  }
+  .num-box {
+    width: 68px; height: 68px;
+    border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px; font-weight: 800;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.12);
+  }
+  .num-box.left  { background: white; color: var(--blue); border: 3px solid var(--blue); }
+  .num-box.right { background: white; border: 3px dashed #ccc; color: #ddd; font-size: 27px; }
+  .op-sign { font-size: 34px; font-weight: 800; color: var(--pink); }
+  .eq-sign  { font-size: 34px; font-weight: 800; color: #aaa; }
+
+  .dots-section {
+    width: 100%;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 5px;
+  }
+  .ten-frame {
+    display: flex; flex-direction: column; gap: 4px;
+    background: white; border-radius: 14px;
+    padding: 7px 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+    width: 100%;
+  }
+  .dot-row { display: flex; gap: 5px; justify-content: center; }
+  .dot-cell {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 2.5px dashed #ddd;
+    background: transparent;
+  }
+
+  @keyframes ballPop {
+    0%   { transform: scale(0); opacity: 0; }
+    70%  { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .dot-cell.filled-a {
+    background: var(--ball1); border-color: var(--ball1);
+    box-shadow: 0 3px 0 #c94444;
+    animation: ballPop 0.3s cubic-bezier(0.175,0.885,0.32,1.275) forwards;
+  }
+  .dot-cell.filled-b {
+    background: var(--ball2); border-color: var(--ball2);
+    box-shadow: 0 3px 0 #349e97;
+    animation: ballPop 0.3s cubic-bezier(0.175,0.885,0.32,1.275) forwards;
+  }
+  .dot-cell.filled-a::after, .dot-cell.filled-b::after {
+    content: '';
+    display: block;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.4);
+    margin: 3px 0 0 3px;
+  }
+
+  /* COUNT LABEL (acts as the sole button) */
+  .count-label-wrap {
+    width: 100%;
+  }
+  .count-label-btn {
+    width: 100%;
+    padding: 8px 12px;
+    border: none; border-radius: 14px;
+    background: #ede2ff;
+    color: var(--purple);
+    font-family: inherit; font-size: 15px; font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #c0a8f0;
+    transition: all 0.15s;
+    letter-spacing: 1px;
+    text-align: center;
+  }
+  .count-label-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #c0a8f0; }
+  .count-label-btn:disabled { background: #e8e8e8; color: #bbb; box-shadow: 0 4px 0 #ccc; cursor: default; }
+
+  /* COUNT POP — separate keyframe, smooth scale up and back */
+  @keyframes countPop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.5); }
+    100% { transform: scale(1); }
+  }
+
+  .dots-section { position: relative; }
+
+  .input-display {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px; width: 100%;
+  }
+  .digit-display {
+    display: flex; gap: 6px;
+    align-items: center; justify-content: center;
+    min-width: 100px;
+  }
+  .digit-slot {
+    width: 52px; height: 54px;
+    border-radius: 14px;
+    background: white; border: 3px dashed #ccc;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; font-weight: 800; color: var(--blue);
+    transition: all 0.2s;
+  }
+  .digit-slot.filled { border-color: var(--blue); border-style: solid; background: #edf6ff; }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+  .digit-slot.shake { animation: shake 0.4s; border-color: var(--red); background: #fff0f0; }
+
+  .backspace-btn {
+    width: 50px; height: 50px;
+    border-radius: 14px; border: none;
+    background: #ffe0e0; color: var(--red);
+    font-size: 20px; cursor: pointer;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.12);
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .backspace-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.12); }
+
+  .keypad { width: 100%; display: flex; flex-direction: column; gap: 5px; }
+  .key-row { display: flex; gap: 5px; justify-content: center; }
+  .key-btn {
+    flex: 1; max-width: 68px; height: 50px;
+    border-radius: 14px; border: none;
+    font-family: inherit; font-size: 22px; font-weight: 800;
+    cursor: pointer; transition: all 0.15s;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.13);
+  }
+  .key-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.13); }
+  .key-btn.k1 { background: #ffe0e0; color: var(--red); }
+  .key-btn.k2 { background: #ffecd0; color: var(--orange); }
+  .key-btn.k3 { background: #fff9cc; color: #c8a200; }
+  .key-btn.k4 { background: #d8f5e0; color: #2a9a50; }
+  .key-btn.k5 { background: #d0f0f5; color: #1a8a99; }
+  .key-btn.k6 { background: #d0e8ff; color: var(--blue); }
+  .key-btn.k7 { background: #e0d8ff; color: var(--purple); }
+  .key-btn.k8 { background: #ffd8f0; color: var(--pink); }
+  .key-btn.k9 { background: #ffe8cc; color: #cc6600; }
+  .key-btn.k0 { background: #f0f0f0; color: #888; }
+
+  .next-btn {
+    display: none;
+    padding: 10px 0; width: 100%;
+    border: none; border-radius: 16px;
+    background: var(--green); color: white;
+    font-family: inherit; font-size: 17px; font-weight: 800;
+    cursor: pointer; box-shadow: 0 4px 0 #3a9a56; transition: all 0.15s;
+  }
+  .next-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #3a9a56; }
+
+  /* CORRECT OVERLAY */
+  .result-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    align-items: center; justify-content: center;
+    z-index: 100; pointer-events: none;
+  }
+  .result-overlay.show { display: flex; }
+  .big-circle {
+    width: 190px; height: 190px;
+    border-radius: 50%;
+    border: 12px solid var(--red);
+    display: flex; align-items: center; justify-content: center;
+    animation: popIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards;
+    background: rgba(255,255,255,0.15);
+  }
+  .big-circle .correct-num { font-size: 68px; font-weight: 800; color: var(--red); }
+  @keyframes popIn {
+    0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+    100% { transform: scale(1) rotate(-15deg); opacity: 1; }
+  }
+
+  /* PULSE */
+  @keyframes pulse {
+    0%,100% { transform: scale(1); box-shadow: 0 4px 0 rgba(0,0,0,0.12); }
+    50%      { transform: scale(1.08); box-shadow: 0 6px 0 rgba(74,168,232,0.4); }
+  }
+  .num-box.pulse { animation: pulse 0.8s ease-in-out infinite; }
+
+  /* ══ MILESTONE SCREEN ══ */
+  #milestoneScreen {
+    gap: 22px;
+    text-align: center;
+  }
+
+  .milestone-stars {
+    font-size: 54px;
+    animation: starPop 0.6s cubic-bezier(0.175,0.885,0.32,1.275) forwards;
+  }
+  @keyframes starPop {
+    0%   { transform: scale(0) rotate(-30deg); opacity: 0; }
+    80%  { transform: scale(1.15) rotate(5deg); }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+
+  .milestone-title {
+    font-size: 34px; font-weight: 800;
+    color: var(--orange);
+    text-shadow: 0 3px 0 rgba(255,140,66,0.18);
+    line-height: 1.3;
+  }
+
+  .milestone-card {
+    background: white;
+    border-radius: 22px;
+    padding: 20px 32px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.09);
+    width: 100%;
+  }
+  .milestone-card .label {
+    font-size: 18px; font-weight: 700; color: #aaa;
+    margin-bottom: 4px;
+  }
+  .milestone-card .big-score {
+    font-size: 62px; font-weight: 800;
+    color: var(--blue);
+    line-height: 1;
+  }
+  .milestone-card .unit {
+    font-size: 22px; font-weight: 700; color: #555;
+    margin-top: 2px;
+  }
+
+  .milestone-btns { display: flex; flex-direction: column; gap: 11px; width: 100%; }
+
+  .continue-btn {
+    padding: 16px 0; width: 100%;
+    border: none; border-radius: 20px;
+    background: linear-gradient(135deg, var(--green), #38b860);
+    color: white;
+    font-family: inherit; font-size: 22px; font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 6px 0 #2a8a48;
+    transition: all 0.15s;
+  }
+  .continue-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #2a8a48; }
+
+  .end-btn {
+    padding: 13px 0; width: 100%;
+    border: 3px solid #ddd; border-radius: 20px;
+    background: white; color: #bbb;
+    font-family: inherit; font-size: 19px; font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #e0e0e0;
+    transition: all 0.15s;
+  }
+  .end-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #e0e0e0; }
+
+  /* ══ RESPONSIVE ══ */
+  @media (max-height: 680px) {
+    .dot-cell { width: 28px; height: 28px; }
+    .num-box { width: 58px; height: 58px; font-size: 30px; }
+    .ten-frame { padding: 5px 8px; }
+    .dot-row { gap: 4px; }
+    .key-btn { height: 44px; font-size: 19px; }
+    #topScreen { gap: 16px; }
+    .top-deco { font-size: 52px; }
+    .top-title { font-size: 30px; }
+    #milestoneScreen { gap: 16px; }
+    .milestone-title { font-size: 28px; }
+    .milestone-card .big-score { font-size: 52px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ TOP ══ -->
+<div class="screen active" id="topScreen">
+  <div class="top-deco">🌟</div>
+  <div>
+    <div class="top-title">たしざん<br>クイズ</div>
+    <div class="top-sub">なんもんせいかいできるかな？</div>
+  </div>
+  <div class="top-balls">
+    <div class="top-ball" style="background:var(--ball1);box-shadow:0 4px 0 #c94444;"></div>
+    <div class="top-ball" style="background:var(--ball2);box-shadow:0 4px 0 #349e97;"></div>
+    <div class="top-ball" style="background:var(--purple);box-shadow:0 4px 0 #6a50cc;"></div>
+    <div class="top-ball" style="background:var(--yellow);box-shadow:0 4px 0 #c8a000;"></div>
+  </div>
+  <button class="start-btn" onclick="startGame()">🚀 スタート！</button>
+</div>
+
+<!-- ══ QUIZ ══ -->
+<div class="screen" id="quizScreen">
+
+  <div class="score-bar">
+    <div class="score-badge">せいかい <span id="scoreDisp">0</span> もん</div>
+    <div class="mode-bar">
+      <button class="mode-btn active" id="modeBtn1" onclick="setMode(1)">① 10まで</button>
+      <button class="mode-btn"        id="modeBtn2" onclick="setMode(3)">② 10より大きい</button>
+    </div>
+  </div>
+
+  <div class="question-area">
+    <div class="num-box left" id="numA">3</div>
+    <div class="op-sign">＋</div>
+    <div class="num-box left" id="numB">4</div>
+    <div class="eq-sign">＝</div>
+    <div class="num-box right" id="numQ">？</div>
+  </div>
+
+  <div class="dots-section" id="dotsSection"></div>
+
+  <!-- COUNT BUTTON -->
+  <div class="count-label-wrap">
+    <button class="count-label-btn" id="countBtn" onclick="startCounting()">🔢 いっしょにかぞえてみよう</button>
+  </div>
+
+  <div class="input-display">
+    <div class="digit-display">
+      <div class="digit-slot" id="slot1"></div>
+      <div class="digit-slot" id="slot2" style="display:none"></div>
+    </div>
+    <button class="backspace-btn" onclick="backspace()">⌫</button>
+  </div>
+
+  <button class="next-btn" id="nextBtn" onclick="nextQuestion()">つぎのもんだい ▶</button>
+
+  <div class="keypad">
+    <div class="key-row">
+      <button class="key-btn k1" onclick="pressKey(1)">1</button>
+      <button class="key-btn k2" onclick="pressKey(2)">2</button>
+      <button class="key-btn k3" onclick="pressKey(3)">3</button>
+      <button class="key-btn k4" onclick="pressKey(4)">4</button>
+      <button class="key-btn k5" onclick="pressKey(5)">5</button>
+    </div>
+    <div class="key-row">
+      <button class="key-btn k6" onclick="pressKey(6)">6</button>
+      <button class="key-btn k7" onclick="pressKey(7)">7</button>
+      <button class="key-btn k8" onclick="pressKey(8)">8</button>
+      <button class="key-btn k9" onclick="pressKey(9)">9</button>
+      <button class="key-btn k0" onclick="pressKey(0)">0</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ MILESTONE ══ -->
+<div class="screen" id="milestoneScreen">
+  <div class="milestone-stars">🌟⭐🌟</div>
+  <div class="milestone-title">すごいね！<br>よくできました！</div>
+  <div class="milestone-card">
+    <div class="label">これまでのせいかい</div>
+    <div class="big-score" id="milestoneCount">10</div>
+    <div class="unit">もん せいかい！🎉</div>
+  </div>
+  <div class="milestone-btns">
+    <button class="continue-btn" onclick="continueGame()">🚀 つづける</button>
+    <button class="end-btn"      onclick="endGame()">👋 おわる</button>
+  </div>
+</div>
+
+<!-- CORRECT OVERLAY -->
+<div class="result-overlay" id="resultOverlay">
+  <div class="big-circle">
+    <span class="correct-num" id="correctNum"></span>
+  </div>
+</div>
+
+<script>
+let mode = 1;
+let a = 0, b = 0;
+let answered = false;
+let inputDigits = [];
+let totalScore = 0;
+let sessionScore = 0;
+let allCells = [];
+let revealedA = 0, revealedB = 0;
+
+const MILESTONE = 10;
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function startGame() {
+  totalScore = 0;
+  sessionScore = 0;
+  mode = 1;
+  document.getElementById('modeBtn1').classList.add('active');
+  document.getElementById('modeBtn2').classList.remove('active');
+  updateScoreDisp();
+  showScreen('quizScreen');
+  nextQuestion();
+}
+
+function continueGame() {
+  sessionScore = 0;
+  showScreen('quizScreen');
+  nextQuestion();
+}
+
+function endGame() {
+  showScreen('topScreen');
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('modeBtn1').classList.toggle('active', m === 1);
+  document.getElementById('modeBtn2').classList.toggle('active', m === 3);
+  nextQuestion();
+}
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function generateQuestion() {
+  if (mode === 1) {
+    a = randInt(1, 9);
+    b = randInt(1, 10 - a);
+  } else {
+    a = randInt(2, 9);
+    b = randInt(Math.max(1, 11 - a), Math.min(9, 18 - a));
+  }
+}
+
+function updateScoreDisp() {
+  document.getElementById('scoreDisp').textContent = totalScore;
+}
+
+function renderDots() {
+  const sec = document.getElementById('dotsSection');
+  sec.innerHTML = '';
+  allCells = [];
+  revealedA = 0; revealedB = 0;
+
+  const { frame: f1, cells: c1 } = makeTenFrame();
+  sec.appendChild(f1);
+  allCells.push(...c1);
+
+  if (a + b > 10) {
+    const { frame: f2, cells: c2 } = makeTenFrame();
+    sec.appendChild(f2);
+    allCells.push(...c2);
+  }
+
+  const boxA = document.getElementById('numA');
+  const boxB = document.getElementById('numB');
+  boxA.onclick = tapNumA;
+  boxB.onclick = tapNumB;
+  boxA.style.cursor = 'pointer';
+  boxB.style.cursor = 'pointer';
+  boxA.classList.add('pulse');
+}
+
+function makeTenFrame() {
+  const frame = document.createElement('div');
+  frame.className = 'ten-frame';
+  const cells = [];
+  for (let i = 0; i < 10; i++) {
+    const c = document.createElement('div');
+    c.className = 'dot-cell';
+    cells.push(c);
+  }
+  const r1 = document.createElement('div'); r1.className = 'dot-row';
+  const r2 = document.createElement('div'); r2.className = 'dot-row';
+  cells.slice(0,5).forEach(c => r1.appendChild(c));
+  cells.slice(5,10).forEach(c => r2.appendChild(c));
+  frame.appendChild(r1); frame.appendChild(r2);
+  return { frame, cells };
+}
+
+function tapNumA() {
+  if (answered || revealedA >= a) return;
+  const cell = allCells[revealedA];
+  cell.classList.remove('filled-a','filled-b');
+  void cell.offsetWidth;
+  cell.classList.add('filled-a');
+  revealedA++;
+  if (revealedA === a) {
+    document.getElementById('numA').classList.remove('pulse');
+    document.getElementById('numB').classList.add('pulse');
+  }
+}
+
+function tapNumB() {
+  if (answered || revealedA < a || revealedB >= b) return;
+  const cell = allCells[a + revealedB];
+  cell.classList.remove('filled-a','filled-b');
+  void cell.offsetWidth;
+  cell.classList.add('filled-b');
+  revealedB++;
+  if (revealedB === b) {
+    document.getElementById('numB').classList.remove('pulse');
+  }
+}
+
+function updateSlots() {
+  const two = (a + b) >= 10;
+  const s1 = document.getElementById('slot1');
+  const s2 = document.getElementById('slot2');
+  s2.style.display = two ? 'flex' : 'none';
+  s1.textContent = inputDigits[0] ?? '';
+  s1.classList.toggle('filled', inputDigits[0] !== undefined);
+  if (two) {
+    s2.textContent = inputDigits[1] ?? '';
+    s2.classList.toggle('filled', inputDigits[1] !== undefined);
+  }
+}
+
+function pressKey(d) {
+  if (answered) return;
+  const maxDigits = (a + b) >= 10 ? 2 : 1;
+  if (inputDigits.length >= maxDigits) return;
+  inputDigits.push(String(d));
+  updateSlots();
+  if (inputDigits.length === maxDigits) {
+    setTimeout(() => checkAnswer(parseInt(inputDigits.join(''))), 150);
+  }
+}
+
+function backspace() {
+  if (answered) return;
+  inputDigits.pop();
+  updateSlots();
+}
+
+function checkAnswer(entered) {
+  const correct = a + b;
+  if (entered !== correct) {
+    const s1 = document.getElementById('slot1');
+    const s2 = document.getElementById('slot2');
+    s1.classList.add('shake'); s2.classList.add('shake');
+    setTimeout(() => {
+      s1.classList.remove('shake'); s2.classList.remove('shake');
+      inputDigits = []; updateSlots();
+    }, 500);
+    return;
+  }
+
+  answered = true;
+  totalScore++;
+  sessionScore++;
+  updateScoreDisp();
+
+  const qBox = document.getElementById('numQ');
+  qBox.textContent = correct;
+  qBox.style.color = 'var(--red)';
+  qBox.style.borderColor = 'var(--red)';
+  qBox.style.borderStyle = 'solid';
+
+  document.getElementById('correctNum').textContent = correct;
+  const overlay = document.getElementById('resultOverlay');
+  overlay.classList.add('show');
+
+  if (sessionScore % MILESTONE === 0) {
+    setTimeout(() => {
+      overlay.classList.remove('show');
+      document.getElementById('milestoneCount').textContent = totalScore;
+      showScreen('milestoneScreen');
+    }, 1500);
+  } else {
+    document.getElementById('nextBtn').style.display = 'block';
+    setTimeout(() => overlay.classList.remove('show'), 1500);
+  }
+}
+
+function nextQuestion() {
+  answered = false;
+  inputDigits = [];
+  generateQuestion();
+
+  const boxA = document.getElementById('numA');
+  const boxB = document.getElementById('numB');
+  boxA.textContent = a;
+  boxB.textContent = b;
+  boxA.classList.remove('pulse');
+  boxB.classList.remove('pulse');
+
+  const qBox = document.getElementById('numQ');
+  qBox.textContent = '？';
+  qBox.style.color = '#ddd';
+  qBox.style.borderColor = '#ccc';
+  qBox.style.borderStyle = 'dashed';
+
+  document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('resultOverlay').classList.remove('show');
+
+  // Reset count button
+  const cb = document.getElementById('countBtn');
+  if (cb) cb.disabled = false;
+
+  updateSlots();
+  renderDots();
+}
+
+/* ── COUNTING ANIMATION + SPEECH ── */
+let countingActive = false;
+
+// Japanese number words
+const numWords = ['いち','に','さん','し','ご','ろく','なな','はち','きゅう','じゅう',
+                  'じゅういち','じゅうに','じゅうさん','じゅうし','じゅうご',
+                  'じゅうろく','じゅうなな','じゅうはち'];
+
+function speak(text, onEnd) {
+  if (!window.speechSynthesis) { if (onEnd) onEnd(); return; }
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ja-JP';
+  u.rate = 0.72;   // slow and clear for toddlers
+  u.pitch = 1.15;  // slightly warm/high
+  u.volume = 1;
+  if (onEnd) u.onend = onEnd;
+  window.speechSynthesis.speak(u);
+}
+
+function startCounting() {
+  if (countingActive) return;
+  const filledCells = allCells.filter(c =>
+    c.classList.contains('filled-a') || c.classList.contains('filled-b')
+  );
+  if (filledCells.length === 0) {
+    speak('まず ボールを だしてみよう！');
+    return;
+  }
+
+  countingActive = true;
+  const btn = document.getElementById('countBtn');
+  if (btn) btn.disabled = true;
+
+  speak('いっしょに かぞえるよ。', () => {
+    countOneBall(filledCells, 0);
+  });
+}
+
+function countOneBall(cells, idx) {
+  if (idx >= cells.length) {
+    const total = cells.length;
+    const word = numWords[total - 1] || String(total);
+    setTimeout(() => {
+      speak('ぜんぶで ' + word + '！ すごい！', () => {
+        countingActive = false;
+        const btn = document.getElementById('countBtn');
+        if (btn) btn.disabled = false;
+      });
+    }, 300);
+    return;
+  }
+
+  const cell = cells[idx];
+  // Apply countPop directly as inline style so it overrides ballPop cleanly
+  cell.style.animation = 'none';
+  void cell.offsetWidth;  // force reflow
+  cell.style.animation = 'countPop 0.65s cubic-bezier(0.175,0.885,0.32,1.275) both';
+
+  const word = numWords[idx];
+  speak(word, () => {
+    setTimeout(() => {
+      // After pop finishes, clear inline so the ball just sits still
+      cell.style.animation = '';
+      setTimeout(() => countOneBall(cells, idx + 1), 120);
+    }, 60);
+  });
+}
+
+</script>
+</body>
+</html>

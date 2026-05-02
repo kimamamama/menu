@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>アルファベットをおぼえよう！</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Andika:wght@400;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --blue: #4A9FD4;
+  --bluedark: #2A70A4;
+  --white85: rgba(255,255,255,0.85);
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Nunito', sans-serif;
+  background: linear-gradient(180deg, #7EC8E3 0%, #B8E8FF 55%, #C8F090 100%);
+  background-attachment: fixed;
+  overflow-x: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ====== SCREENS ====== */
+.screen { display: none; flex-direction: column; min-height: 100vh; }
+.screen.active { display: flex; }
+
+/* ====== DECO ====== */
+.sun-deco {
+  position: fixed; top: 14px; right: 18px; z-index: 0;
+  width: 60px; height: 60px;
+  background: radial-gradient(circle, #FFE97A, #FFD700);
+  border-radius: 50%;
+  box-shadow: 0 0 0 10px rgba(255,215,0,0.18), 0 0 0 20px rgba(255,215,0,0.08);
+  animation: sunPulse 3s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes sunPulse {
+  0%,100% { box-shadow: 0 0 0 10px rgba(255,215,0,0.18), 0 0 0 20px rgba(255,215,0,0.08); }
+  50%      { box-shadow: 0 0 0 15px rgba(255,215,0,0.25), 0 0 0 28px rgba(255,215,0,0.1); }
+}
+
+/* ====== TOP SCREEN ====== */
+#topScreen {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px 20px 30px;
+  gap: 0;
+}
+
+.top-emoji {
+  font-size: clamp(2.6rem, 9vw, 4.5rem);
+  margin-bottom: 4px;
+  display: block;
+  animation: bounceY 2s ease-in-out infinite alternate;
+}
+@keyframes bounceY { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+
+.top-title {
+  font-family: 'Nunito', sans-serif;
+  font-size: clamp(1.7rem, 5.5vw, 3rem);
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 3px 0 rgba(0,0,0,0.14), 0 6px 14px rgba(0,0,0,0.08);
+  line-height: 1.2;
+  margin-bottom: 28px;
+}
+
+.top-card {
+  background: var(--white85);
+  border-radius: 24px;
+  padding: 18px 22px 20px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.11);
+  width: 100%;
+  max-width: 420px;
+  margin-bottom: 16px;
+}
+.top-card-title {
+  font-size: 0.78rem; font-weight: 800; color: #aaa;
+  letter-spacing: 1px; text-transform: uppercase; margin-bottom: 11px;
+}
+
+.seg-group {
+  display: flex;
+  background: rgba(0,0,0,0.07);
+  border-radius: 12px; padding: 3px; gap: 3px;
+}
+.seg-btn {
+  flex: 1; border: none; border-radius: 9px;
+  padding: 10px 6px;
+  font-family: 'Nunito', sans-serif;
+  font-size: clamp(0.82rem, 2.4vw, 0.98rem);
+  font-weight: 800; cursor: pointer;
+  background: transparent; color: #999;
+  transition: all 0.18s;
+}
+.seg-btn.active {
+  background: var(--blue); color: #fff;
+  box-shadow: 0 3px 8px rgba(74,159,212,0.4);
+}
+
+.level-cards { display: flex; gap: 9px; }
+.level-card {
+  flex: 1; border: 3px solid transparent;
+  border-radius: 14px; padding: 11px 4px;
+  cursor: pointer; font-family: 'Nunito', sans-serif;
+  font-weight: 800; background: rgba(255,255,255,0.55);
+  color: #777; transition: all 0.18s; text-align: center; line-height: 1.4;
+}
+.level-card .lv-stars { font-size: 0.95rem; display: block; margin-bottom: 2px; }
+.level-card .lv-name  { font-size: 0.82rem; display: block; }
+.level-card.active { border-color: var(--blue); background: rgba(74,159,212,0.12); color: var(--bluedark); }
+
+.start-btn {
+  border: none; border-radius: 50px;
+  padding: 15px 44px;
+  font-family: 'Nunito', sans-serif;
+  font-size: clamp(1.15rem, 3.8vw, 1.55rem);
+  font-weight: 900;
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color: #7A4800;
+  box-shadow: 0 6px 0 #CC7A00, 0 10px 22px rgba(255,165,0,0.3);
+  cursor: pointer; transition: all 0.15s;
+}
+.start-btn:hover { transform: translateY(-3px); }
+.start-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #CC7A00; }
+
+/* ====== GAME SCREEN ====== */
+#gameScreen { padding: 0; }
+
+.game-header {
+  position: sticky; top: 0; z-index: 20;
+  background: linear-gradient(180deg, rgba(110,195,220,0.97) 82%, transparent 100%);
+  padding: 9px 12px 12px;
+}
+.game-header-row {
+  display: flex; align-items: center;
+  justify-content: space-between; margin-bottom: 7px;
+}
+.back-btn {
+  border: none;
+  background: rgba(255,255,255,0.78);
+  border-radius: 50px; padding: 6px 13px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800; font-size: 0.8rem; color: var(--bluedark);
+  cursor: pointer; box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+  transition: all 0.12s;
+}
+.back-btn:active { transform: scale(0.94); }
+.game-title-sm {
+  font-family: 'Nunito', sans-serif;
+  font-size: clamp(0.95rem, 3.2vw, 1.3rem);
+  font-weight: 900; color: #fff;
+  text-shadow: 0 2px 0 rgba(0,0,0,0.12);
+}
+.mode-badge {
+  background: rgba(255,255,255,0.78);
+  border-radius: 50px; padding: 4px 11px;
+  font-size: 0.72rem; font-weight: 800; color: var(--bluedark);
+}
+.prog-wrap {
+  height: 8px; border-radius: 50px;
+  background: rgba(255,255,255,0.38); overflow: hidden;
+}
+.prog-bar {
+  height: 100%; border-radius: 50px;
+  background: linear-gradient(90deg, #FFD700, #FF8C00);
+  transition: width 0.4s ease; width: 0%;
+}
+
+/* ====== ALPHA GRID ====== */
+.game-body { flex: 1; padding: 8px 8px 6px; }
+
+.alpha-grid {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: clamp(4px, 1.1vw, 8px);
+  max-width: 640px;
+  margin: 0 auto 6px;
+}
+@media (max-width: 500px) { .alpha-grid { grid-template-columns: repeat(7, 1fr); } }
+@media (max-width: 380px) { .alpha-grid { grid-template-columns: repeat(6, 1fr); } }
+
+.letter-btn {
+  aspect-ratio: 1; border: none;
+  border-radius: clamp(9px, 2vw, 15px);
+  font-family: 'Andika', sans-serif;
+  font-size: clamp(1.1rem, 3.5vw, 1.9rem);
+  font-weight: 700; cursor: pointer;
+  /* No transition on transform to avoid stuck-position bug */
+  transition: filter 0.1s;
+  display: flex; align-items: center; justify-content: center;
+  outline: none; -webkit-tap-highlight-color: transparent;
+  will-change: auto;
+  position: relative; top: 0;
+}
+.letter-btn:nth-child(7n+1) { background: #FFB3C6; color: #A03060; box-shadow: 0 4px 0 #D06090; }
+.letter-btn:nth-child(7n+2) { background: #FFD8A0; color: #904010; box-shadow: 0 4px 0 #D09040; }
+.letter-btn:nth-child(7n+3) { background: #B0F0B0; color: #207040; box-shadow: 0 4px 0 #50C060; }
+.letter-btn:nth-child(7n+4) { background: #A8D8FF; color: #1050A0; box-shadow: 0 4px 0 #40A0E0; }
+.letter-btn:nth-child(7n+5) { background: #E0C8FF; color: #6020C0; box-shadow: 0 4px 0 #A060E0; }
+.letter-btn:nth-child(7n+6) { background: #FFE8A0; color: #806010; box-shadow: 0 4px 0 #C0A030; }
+.letter-btn:nth-child(7n+0) { background: #C0F0F0; color: #107070; box-shadow: 0 4px 0 #50C0C0; }
+
+/* Press: shift down by shadow amount so button looks pressed, no hover lift */
+.letter-btn:active:not(.blank):not(.filled) {
+  top: 4px;
+  box-shadow: 0 0 0 transparent !important;
+  filter: brightness(0.95);
+}
+
+/* Tap pop animation via class - doesn't affect resting position */
+.letter-btn.popping {
+  animation: btnPop 0.26s ease;
+}
+@keyframes btnPop {
+  0%   { filter: brightness(1); }
+  40%  { filter: brightness(1.2); transform: scale(1.15); }
+  100% { filter: brightness(1); transform: scale(1); }
+}
+
+/* Blank */
+.letter-btn.blank {
+  background: rgba(255,255,255,0.42) !important;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.07) !important;
+  border: 2px dashed rgba(0,0,0,0.18) !important;
+  cursor: default; color: transparent !important;
+}
+.letter-btn.blank.highlighted {
+  background: rgba(100,180,240,0.3) !important;
+  border: 2px solid #4A9FD4 !important;
+  box-shadow: 0 0 0 3px rgba(74,159,212,0.3) !important;
+  animation: hlPulse 1.1s ease-in-out infinite;
+}
+@keyframes hlPulse {
+  0%,100% { box-shadow: 0 0 0 3px rgba(74,159,212,0.3) !important; }
+  50%      { box-shadow: 0 0 0 8px rgba(74,159,212,0.14) !important; }
+}
+.letter-btn.filled {
+  border: none !important; cursor: pointer;
+  animation: popIn 0.28s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn {
+  0% { transform: scale(0.45); opacity: 0.6; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ====== CHOICES AREA (sticky bottom) ====== */
+.choices-area {
+  position: sticky; bottom: 0; z-index: 15;
+  background: linear-gradient(0deg, rgba(170,228,255,0.97) 78%, transparent 100%);
+  padding: 8px 10px 12px;
+}
+.choices-inner {
+  background: rgba(255,255,255,0.9);
+  border-radius: 18px;
+  padding: 10px 12px 11px;
+  box-shadow: 0 -2px 14px rgba(0,0,0,0.07), 0 4px 14px rgba(0,0,0,0.07);
+  max-width: 480px; margin: 0 auto;
+}
+.choices-label {
+  text-align: center; font-size: 0.75rem; font-weight: 800;
+  color: #bbb; margin-bottom: 9px; letter-spacing: 0.4px;
+}
+.choices-row {
+  display: flex; gap: 10px; justify-content: center;
+}
+.choice-btn {
+  flex: 1; max-width: 78px; aspect-ratio: 1;
+  border: none; border-radius: 13px;
+  font-family: 'Andika', sans-serif;
+  font-size: clamp(1.5rem, 5vw, 2.2rem);
+  font-weight: 700; cursor: pointer;
+  background: var(--blue); color: #fff;
+  box-shadow: 0 5px 0 var(--bluedark);
+  transition: transform 0.11s, box-shadow 0.11s;
+  outline: none; -webkit-tap-highlight-color: transparent;
+}
+.choice-btn:hover { transform: translateY(-3px); filter: brightness(1.08); }
+.choice-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--bluedark); }
+
+/* ====== FEEDBACK ====== */
+#feedbackOverlay {
+  position: fixed; inset: 0; z-index: 80;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+
+/* Red single-stroke outline circle */
+.circle-correct {
+  width: clamp(130px, 34vw, 200px);
+  height: clamp(130px, 34vw, 200px);
+  border-radius: 50%;
+  background: transparent;
+  border: clamp(10px, 2.8vw, 16px) solid #E50000;
+  animation: circlePop 0.32s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes circlePop {
+  0% { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Ghost – big */
+.ghost-wrong {
+  font-size: clamp(5.5rem, 18vw, 9rem);
+  display: block; line-height: 1;
+  filter: drop-shadow(0 8px 18px rgba(0,0,0,0.22));
+  animation: ghostAppear 0.32s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes ghostAppear {
+  0% { transform: scale(0) translateY(24px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* ====== COMPLETE ====== */
+#completeScreen {
+  position: fixed; inset: 0; z-index: 100;
+  background: linear-gradient(135deg, #7EC8E3 0%, #FFB3D9 55%, #FFD700 100%);
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 28px 20px;
+}
+#completeScreen.show { display: flex; }
+.c-stars { font-size: 2.6rem; letter-spacing: 6px; margin-bottom: 10px; animation: starIn 0.55s cubic-bezier(.34,1.56,.64,1); }
+@keyframes starIn { from { transform: scale(0) rotate(-180deg); } to { transform: scale(1) rotate(0); } }
+.c-title {
+  font-family: 'Nunito', sans-serif;
+  font-size: clamp(1.75rem, 5.5vw, 3rem);
+  font-weight: 900; color: #fff;
+  text-shadow: 0 3px 0 rgba(0,0,0,0.14); margin-bottom: 6px;
+}
+.c-sub { font-size: 1rem; color: rgba(255,255,255,0.92); font-weight: 700; margin-bottom: 30px; }
+.c-btns { display: flex; gap: 13px; flex-wrap: wrap; justify-content: center; }
+.c-btn {
+  border: none; cursor: pointer; border-radius: 50px;
+  padding: 14px 26px;
+  font-family: 'Nunito', sans-serif; font-size: 0.98rem; font-weight: 800;
+  transition: all 0.14s;
+}
+.c-btn.again { background: #FFD700; color: #7A5800; box-shadow: 0 5px 0 #BB8800; }
+.c-btn.quit  { background: rgba(255,255,255,0.92); color: #888; box-shadow: 0 5px 0 rgba(0,0,0,0.1); }
+.c-btn:hover  { transform: translateY(-3px); }
+.c-btn:active { transform: translateY(3px); }
+
+/* Confetti */
+.confetti-wrap { position: fixed; inset: 0; pointer-events: none; z-index: 99; overflow: hidden; }
+.cp {
+  position: absolute;
+  animation: cfFall linear forwards;
+}
+@keyframes cfFall {
+  0%   { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(105vh) rotate(600deg); opacity: 0; }
+}
+
+/* Deco stars */
+.deco-star {
+  position: fixed; pointer-events: none; z-index: 1; opacity: 0;
+  animation: floatUp ease-in-out infinite;
+}
+@keyframes floatUp {
+  0%   { opacity: 0; transform: translateY(0) scale(0.5); }
+  30%  { opacity: 0.55; }
+  100% { opacity: 0; transform: translateY(-55px) scale(1.1); }
+}
+</style>
+</head>
+<body>
+
+<div class="sun-deco"></div>
+
+<!-- ========== TOP SCREEN ========== -->
+<div id="topScreen" class="screen active">
+  <span class="top-emoji">🌈</span>
+  <div class="top-title">アルファベットを<br>おぼえよう！</div>
+
+  <div class="top-card">
+    <div class="top-card-title">📝 もじ</div>
+    <div class="seg-group">
+      <button class="seg-btn active" id="topBtnUpper" onclick="selectCase('upper')">おおもじ &nbsp;A B C</button>
+      <button class="seg-btn"        id="topBtnLower" onclick="selectCase('lower')">こもじ &nbsp;a b c</button>
+    </div>
+  </div>
+
+  <div class="top-card">
+    <div class="top-card-title">⭐ レベル</div>
+    <div class="level-cards">
+      <div class="level-card active" id="topLv1" onclick="selectLevel(1)">
+        <span class="lv-stars">⭐</span>
+        <span class="lv-name">レベル１</span>
+      </div>
+      <div class="level-card" id="topLv2" onclick="selectLevel(2)">
+        <span class="lv-stars">⭐⭐</span>
+        <span class="lv-name">レベル２</span>
+      </div>
+      <div class="level-card" id="topLv3" onclick="selectLevel(3)">
+        <span class="lv-stars">⭐⭐⭐</span>
+        <span class="lv-name">レベル３</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="start-btn" onclick="startGame()">🚀 はじめる！</button>
+</div>
+
+<!-- ========== GAME SCREEN ========== -->
+<div id="gameScreen" class="screen">
+
+  <div class="game-header">
+    <div class="game-header-row">
+      <button class="back-btn" onclick="goBack()">← もどる</button>
+      <div class="game-title-sm">アルファベット</div>
+      <div class="mode-badge" id="modeBadge"></div>
+    </div>
+    <div class="prog-wrap" id="progWrap" style="display:none">
+      <div class="prog-bar" id="progBar"></div>
+    </div>
+  </div>
+
+  <div class="game-body">
+    <div class="alpha-grid" id="alphaGrid"></div>
+  </div>
+
+  <div class="choices-area" id="choicesArea" style="display:none">
+    <div class="choices-inner">
+      <div class="choices-label">どれかな？ えらんでね！</div>
+      <div class="choices-row" id="choicesRow"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Feedback overlay -->
+<div id="feedbackOverlay"><div id="feedbackContent"></div></div>
+
+<!-- Confetti -->
+<div class="confetti-wrap" id="confettiWrap"></div>
+
+<!-- Complete screen -->
+<div id="completeScreen">
+  <div class="c-stars">⭐⭐⭐</div>
+  <div class="c-title">やったね！🎉</div>
+  <div class="c-sub">ぜんぶできたよ！すごい！！</div>
+  <div class="c-btns">
+    <button class="c-btn again" onclick="restartGame()">🔄 もういちどやる</button>
+    <button class="c-btn quit"  onclick="goBack()">👋 おわる</button>
+  </div>
+</div>
+
+<div id="decoStarsWrap"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+  var currentCase  = 'upper';
+  var currentLevel = 1;
+  var blankIndices = [];
+  var currentBlankPos = 0;
+  var filledCount  = 0;
+  var audioCtx     = null;
+  var feedbackTimer = null;
+  var ghostEl = null;
+  var answering = false;  // prevent double-tap
+
+  /* ---- Audio ---- */
+  function getAudio() {
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+    }
+    return audioCtx;
+  }
+
+  function playLetter(letter) {
+    try {
+      if (!window.speechSynthesis) return;
+      var u = new SpeechSynthesisUtterance(letter);
+      u.lang = 'en-US'; u.rate = 0.82; u.pitch = 1.2; u.volume = 1;
+      var voices = speechSynthesis.getVoices();
+      var v = voices.find(function(v){ return v.lang.startsWith('en') && !v.name.toLowerCase().includes('male'); })
+           || voices.find(function(v){ return v.lang.startsWith('en'); });
+      if (v) u.voice = v;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
+    } catch(e) {}
+  }
+
+  function beep(freqs, dur) {
+    var ctx = getAudio(); if (!ctx) return;
+    try {
+      freqs.forEach(function(f, i) {
+        var osc = ctx.createOscillator();
+        var g   = ctx.createGain();
+        osc.connect(g); g.connect(ctx.destination);
+        osc.frequency.value = f; osc.type = 'sine';
+        var t = ctx.currentTime + i * 0.14;
+        g.gain.setValueAtTime(0.34, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        osc.start(t); osc.stop(t + dur + 0.02);
+      });
+    } catch(e) {}
+  }
+
+  function playCorrect() { beep([523, 659, 784], 0.26); }
+  function playWrong() {
+    var ctx = getAudio(); if (!ctx) return;
+    try {
+      var osc = ctx.createOscillator();
+      var g   = ctx.createGain();
+      osc.connect(g); g.connect(ctx.destination);
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(280, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(140, ctx.currentTime + 0.28);
+      g.gain.setValueAtTime(0.18, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.28);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.32);
+    } catch(e) {}
+  }
+  function playComplete() { beep([523, 659, 784, 1047], 0.36); }
+
+  /* ---- TOP SCREEN ---- */
+  window.selectCase = function(c) {
+    currentCase = c;
+    document.getElementById('topBtnUpper').classList.toggle('active', c === 'upper');
+    document.getElementById('topBtnLower').classList.toggle('active', c === 'lower');
+  };
+
+  window.selectLevel = function(lv) {
+    currentLevel = lv;
+    [1,2,3].forEach(function(n) {
+      document.getElementById('topLv'+n).classList.toggle('active', n === lv);
+    });
+  };
+
+  window.startGame = function() {
+    document.getElementById('topScreen').classList.remove('active');
+    document.getElementById('gameScreen').classList.add('active');
+    buildGame();
+  };
+
+  window.goBack = function() {
+    document.getElementById('gameScreen').classList.remove('active');
+    document.getElementById('topScreen').classList.add('active');
+    document.getElementById('completeScreen').classList.remove('show');
+    document.getElementById('confettiWrap').innerHTML = '';
+    clearFeedback();
+    answering = false;
+  };
+
+  /* ---- BUILD GAME ---- */
+  function buildGame() {
+    filledCount = 0;
+    currentBlankPos = 0;
+    answering = false;
+    clearFeedback();
+
+    document.getElementById('choicesArea').style.display = 'none';
+    document.getElementById('progWrap').style.display = 'none';
+    document.getElementById('completeScreen').classList.remove('show');
+    document.getElementById('confettiWrap').innerHTML = '';
+
+    var badges = ['', '⭐ Lv1', '⭐⭐ Lv2', '⭐⭐⭐ Lv3'];
+    document.getElementById('modeBadge').textContent =
+      badges[currentLevel] + '　' + (currentCase === 'upper' ? 'おおもじ' : 'こもじ');
+
+    var blankCount = currentLevel === 1 ? 0 : currentLevel === 2 ? 5 : 10;
+    blankIndices = [];
+    if (blankCount > 0) {
+      var pool = [];
+      for (var k = 0; k < 26; k++) pool.push(k);
+      while (blankIndices.length < blankCount) {
+        var r = Math.floor(Math.random() * pool.length);
+        blankIndices.push(pool.splice(r, 1)[0]);
+      }
+      blankIndices.sort(function(a,b){ return a - b; });
+    }
+
+    var grid = document.getElementById('alphaGrid');
+    grid.innerHTML = '';
+
+    LETTERS.forEach(function(letter, i) {
+      var btn = document.createElement('button');
+      btn.className = 'letter-btn';
+      btn.id = 'lb_' + i;
+      var disp = currentCase === 'upper' ? letter : letter.toLowerCase();
+
+      if (blankIndices.indexOf(i) !== -1) {
+        btn.classList.add('blank');
+        btn.setAttribute('aria-label', 'くうらん');
+        btn.textContent = '';
+      } else {
+        btn.textContent = disp;
+        btn.setAttribute('aria-label', disp);
+        (function(l){ btn.addEventListener('click', function() { playLetter(l); popBtn(btn); }); })(letter);
+      }
+      grid.appendChild(btn);
+    });
+
+    if (blankIndices.length > 0) {
+      document.getElementById('progWrap').style.display = 'block';
+      updateProgress();
+      highlightBlank();
+      renderChoices();
+    }
+  }
+
+  function popBtn(btn) {
+    btn.classList.add('popping');
+    setTimeout(function() { btn.classList.remove('popping'); }, 280);
+  }
+
+  function highlightBlank() {
+    blankIndices.forEach(function(i) {
+      var b = document.getElementById('lb_' + i);
+      if (b) b.classList.remove('highlighted');
+    });
+    if (currentBlankPos < blankIndices.length) {
+      var idx = blankIndices[currentBlankPos];
+      var b = document.getElementById('lb_' + idx);
+      if (b) b.classList.add('highlighted');
+    }
+  }
+
+  function updateProgress() {
+    var pct = blankIndices.length ? (filledCount / blankIndices.length) * 100 : 0;
+    document.getElementById('progBar').style.width = pct + '%';
+  }
+
+  /* ---- CHOICES ---- */
+  function renderChoices() {
+    if (currentBlankPos >= blankIndices.length) return;
+    var targetLetter = LETTERS[blankIndices[currentBlankPos]];
+
+    var pool = LETTERS.filter(function(l) { return l !== targetLetter; });
+    var wrongs = [];
+    while (wrongs.length < 3) {
+      var r = Math.floor(Math.random() * pool.length);
+      wrongs.push(pool.splice(r, 1)[0]);
+    }
+    var choices = [targetLetter].concat(wrongs);
+    for (var i = choices.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = choices[i]; choices[i] = choices[j]; choices[j] = tmp;
+    }
+
+    var row = document.getElementById('choicesRow');
+    row.innerHTML = '';
+    choices.forEach(function(ch) {
+      var btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.textContent = currentCase === 'upper' ? ch : ch.toLowerCase();
+      (function(c, t){ btn.addEventListener('click', function() { handleChoice(c, t); }); })(ch, targetLetter);
+      row.appendChild(btn);
+    });
+    document.getElementById('choicesArea').style.display = 'block';
+  }
+
+  /* ---- ANSWER ---- */
+  function handleChoice(chosen, target) {
+    if (answering) return;
+    answering = true;
+
+    if (chosen === target) {
+      playCorrect();
+      showCircle();
+
+      var idx = blankIndices[currentBlankPos];
+      var lb  = document.getElementById('lb_' + idx);
+      lb.classList.remove('blank', 'highlighted');
+      lb.classList.add('filled');
+      lb.textContent = currentCase === 'upper' ? target : target.toLowerCase();
+      (function(t){ lb.addEventListener('click', function() { playLetter(t); popBtn(lb); }); })(target);
+
+      filledCount++;
+      updateProgress();
+
+      feedbackTimer = setTimeout(function() {
+        clearFeedback();
+        answering = false;
+        currentBlankPos++;
+        if (currentBlankPos >= blankIndices.length) {
+          document.getElementById('choicesArea').style.display = 'none';
+          setTimeout(showComplete, 320);
+        } else {
+          highlightBlank();
+          renderChoices();
+        }
+      }, 900);
+
+    } else {
+      playWrong();
+      showGhost();
+
+      feedbackTimer = setTimeout(function() {
+        flyGhostAway(function() {
+          clearFeedback();
+          answering = false;
+          renderChoices();
+        });
+      }, 700);
+    }
+  }
+
+  /* ---- FEEDBACK ---- */
+  function showCircle() {
+    var fc = document.getElementById('feedbackContent');
+    fc.innerHTML = '';
+    var d = document.createElement('div');
+    d.className = 'circle-correct';
+    fc.appendChild(d);
+  }
+
+  function showGhost() {
+    var fc = document.getElementById('feedbackContent');
+    fc.innerHTML = '';
+    var d = document.createElement('div');
+    d.className = 'ghost-wrong';
+    d.textContent = '👻';
+    fc.appendChild(d);
+    ghostEl = d;
+  }
+
+  function flyGhostAway(cb) {
+    if (!ghostEl) { if (cb) cb(); return; }
+    var dx = (Math.random() - 0.5) * 380;
+    var dy = -(90 + Math.random() * 280);
+    var rot = (Math.random() - 0.5) * 340;
+    ghostEl.style.transition = 'transform 0.48s ease-in, opacity 0.48s ease-in';
+    ghostEl.style.transform = 'translate(' + dx + 'px,' + dy + 'px) rotate(' + rot + 'deg) scale(0.25)';
+    ghostEl.style.opacity = '0';
+    setTimeout(function() {
+      clearFeedback();
+      if (cb) cb();
+    }, 500);
+  }
+
+  function clearFeedback() {
+    if (feedbackTimer) { clearTimeout(feedbackTimer); feedbackTimer = null; }
+    document.getElementById('feedbackContent').innerHTML = '';
+    ghostEl = null;
+  }
+
+  /* ---- COMPLETE ---- */
+  function showComplete() {
+    document.getElementById('completeScreen').classList.add('show');
+    launchConfetti();
+    playComplete();
+  }
+
+  window.restartGame = function() {
+    document.getElementById('completeScreen').classList.remove('show');
+    document.getElementById('confettiWrap').innerHTML = '';
+    buildGame();
+  };
+
+  function launchConfetti() {
+    var wrap = document.getElementById('confettiWrap');
+    wrap.innerHTML = '';
+    var colors = ['#FFD700','#FF6B9D','#C77DFF','#4ECDC4','#FF8C42','#87CEEB','#B0F090'];
+    for (var i = 0; i < 88; i++) {
+      var d = document.createElement('div');
+      d.className = 'cp';
+      d.style.left = (Math.random() * 100) + '%';
+      d.style.width  = (6 + Math.random() * 8) + 'px';
+      d.style.height = (6 + Math.random() * 10) + 'px';
+      d.style.borderRadius = Math.random() > 0.4 ? '50%' : '2px';
+      d.style.background = colors[Math.floor(Math.random() * colors.length)];
+      d.style.animationDuration = (1.7 + Math.random() * 2) + 's';
+      d.style.animationDelay = (Math.random() * 1.1) + 's';
+      wrap.appendChild(d);
+    }
+  }
+
+  /* ---- DECO STARS ---- */
+  function initDecoStars() {
+    var wrap = document.getElementById('decoStarsWrap');
+    var ems = ['⭐','🌟','✨','💫'];
+    for (var i = 0; i < 14; i++) {
+      var s = document.createElement('div');
+      s.className = 'deco-star';
+      s.textContent = ems[Math.floor(Math.random() * ems.length)];
+      s.style.left = (8 + Math.random() * 82) + '%';
+      s.style.bottom = (3 + Math.random() * 28) + '%';
+      s.style.fontSize = (0.7 + Math.random() * 0.7) + 'rem';
+      s.style.animationDuration = (3 + Math.random() * 2.5) + 's';
+      s.style.animationDelay = (Math.random() * 4.5) + 's';
+      wrap.appendChild(s);
+    }
+  }
+
+  /* ---- INIT ---- */
+  window.addEventListener('load', function() {
+    if (window.speechSynthesis) {
+      speechSynthesis.getVoices();
+      speechSynthesis.onvoiceschanged = function() { speechSynthesis.getVoices(); };
+    }
+    initDecoStars();
+  });
+
+})();
+</script>
+</body>
+</html>

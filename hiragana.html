@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ひらがなランド 🌈</title>
+<!--
+  教育用フォント: BIZ UDPGothic (き・さがつながらない教育用字形)
+  Noto Sans JP はデザイン用サブフォントとして併用
+-->
+<link href="https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600&family=Yomogi&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sky1: #b8e8ff;
+  --sky2: #e0f7ff;
+  --pink: #FF7BAC;
+  --mint: #4ECDC4;
+  --sun:  #FFD93D;
+  --purple: #C77DFF;
+  --orange: #FF9F43;
+  --green: #6BCB77;
+  --card: rgba(255,255,255,0.93);
+  --shadow: 0 4px 18px rgba(0,0,0,0.10);
+  --font-edu: 'Klee One', 'Hiragino Mincho ProN', serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-edu);
+  background: linear-gradient(170deg, #b8e8ff 0%, #d4f0ff 35%, #e8f9ec 70%, #c8f0c0 100%);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── 空の装飾 ── */
+.sky-deco { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.sun {
+  position: absolute; top: 16px; right: 40px;
+  width: 70px; height: 70px; border-radius: 50%;
+  background: radial-gradient(circle, #ffe97a, #FFD93D);
+  box-shadow: 0 0 40px #FFD93D88; animation: sunPulse 5s ease-in-out infinite;
+}
+@keyframes sunPulse { 50% { box-shadow: 0 0 70px #FFD93Daa; } }
+
+.cloud {
+  position: absolute; background: #fff; border-radius: 40px; opacity: .88;
+  animation: cloudDrift linear infinite;
+}
+.cloud::before,.cloud::after { content:''; position:absolute; background:#fff; border-radius:50%; }
+.c1{width:100px;height:34px;top:55px; animation-duration:28s;animation-delay:0s;}
+.c1::before{width:50px;height:50px;top:-22px;left:15px;}
+.c1::after{width:38px;height:38px;top:-16px;left:48px;}
+.c2{width:80px;height:28px;top:100px;animation-duration:20s;animation-delay:-9s;}
+.c2::before{width:40px;height:40px;top:-18px;left:12px;}
+.c2::after{width:30px;height:30px;top:-12px;left:38px;}
+.c3{width:130px;height:40px;top:35px;animation-duration:34s;animation-delay:-17s;}
+.c3::before{width:60px;height:60px;top:-26px;left:20px;}
+.c3::after{width:48px;height:48px;top:-20px;left:62px;}
+@keyframes cloudDrift { from{left:-200px} to{left:110%} }
+
+/* ── CONTAINER ── */
+.container {
+  position: relative; z-index: 1;
+  max-width: 680px; margin: 0 auto; padding: 18px 14px 50px;
+}
+
+/* ── HEADER ── */
+header { text-align:center; margin-bottom: 22px; }
+.title {
+  font-family: 'Yomogi', var(--font-edu);
+  font-size: clamp(1.9em, 7vw, 2.8em); font-weight: 700;
+  background: linear-gradient(130deg, #FF7BAC, #C77DFF, #4ECDC4);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(1px 2px 0 rgba(0,0,0,0.08));
+}
+.subtitle { font-size:.95em; color:#5a8a6a; font-weight:700; margin-top:4px; }
+
+/* ── TABS ── */
+.tab-nav {
+  display:flex; gap:7px; margin-bottom:20px;
+  background: rgba(255,255,255,0.55); border-radius:50px; padding:5px;
+  backdrop-filter: blur(8px); box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+}
+.tab-btn {
+  flex:1; padding:10px 0; border:none; border-radius:45px; cursor:pointer;
+  font-family: var(--font-edu); font-size:.9em; font-weight:700;
+  background:transparent; color:#888; transition:all .22s;
+}
+.tab-btn.active {
+  background:#fff; color:#333;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.12); transform:scale(1.03);
+}
+
+/* ── SCREEN ── */
+.screen { display:none; }
+.screen.active { display:block; animation: fadeUp .28s ease; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+/* ════════════════════════════════
+   おぼえる画面
+════════════════════════════════ */
+/*
+  配列: 縦=行(あかさたなはまやらわ)、横=段(あいうえお)
+  5列固定グリッド。空白セルは透明ダミー
+*/
+.hira-table {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 7px;
+}
+.hira-cell {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 10px 4px 8px;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: var(--shadow), 0 0 0 3px rgba(255,255,255,.5);
+  transition: transform .18s, box-shadow .18s;
+  user-select: none;
+  border-bottom: 4px solid transparent;
+  position: relative; overflow: hidden;
+}
+.hira-cell::after {
+  content:''; position:absolute; inset:0;
+  background: radial-gradient(circle at 65% 18%, rgba(255,255,255,.45), transparent 55%);
+  pointer-events:none;
+}
+.hira-cell:hover { transform: translateY(-4px) scale(1.08); box-shadow: 0 8px 22px rgba(0,0,0,.13); }
+.hira-cell.empty { background:transparent; box-shadow:none; cursor:default; pointer-events:none; }
+.hira-cell .ch  { font-size: 2.1em; font-weight:700; line-height:1; font-family: var(--font-edu); }
+.hira-cell .wd  { font-size: .72em; color:#888; margin-top:3px; font-weight:700; }
+.hira-cell .em  { font-size: 1.1em; }
+/* 行カラー */
+.row-a { border-bottom-color: #FF7BAC; }
+.row-ka{ border-bottom-color: #FF9F43; }
+.row-sa{ border-bottom-color: #FFD93D; }
+.row-ta{ border-bottom-color: #6BCB77; }
+.row-na{ border-bottom-color: #4ECDC4; }
+.row-ha{ border-bottom-color: #C77DFF; }
+.row-ma{ border-bottom-color: #FF6B6B; }
+.row-ya{ border-bottom-color: #FFB3D9; }
+.row-ra{ border-bottom-color: #80DEEA; }
+.row-wa{ border-bottom-color: #BCAAA4; }
+
+/* star burst on tap */
+.star-burst {
+  position:fixed; pointer-events:none; z-index:999;
+  font-size:1.3em; animation: starUp 1s ease-out forwards;
+}
+@keyframes starUp {
+  0%{opacity:1;transform:translateY(0) scale(1)}
+  100%{opacity:0;transform:translateY(-70px) scale(1.4)}
+}
+
+/* ════════════════════════════════
+   もんだい画面
+════════════════════════════════ */
+.quiz-row-tabs {
+  display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px;
+}
+.qr-btn {
+  padding:7px 13px; border-radius:40px; border:2px solid rgba(255,255,255,.7);
+  font-family:var(--font-edu); font-size:.88em; font-weight:700; cursor:pointer;
+  background:var(--card); color:#555; transition:all .18s;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+.qr-btn.active,.qr-btn:hover {
+  background: linear-gradient(135deg,#FF7BAC,#C77DFF);
+  color:#fff; border-color:transparent;
+  box-shadow: 0 4px 14px rgba(199,125,255,.4); transform:scale(1.05);
+}
+
+/* 五十音行を横に表示して□を空ける */
+.quiz-strip {
+  background:var(--card); border-radius:22px; padding:18px 14px;
+  box-shadow: var(--shadow), 0 0 0 3px rgba(255,255,255,.6);
+  margin-bottom:14px;
+}
+.quiz-strip-label { font-size:.82em; color:#aaa; font-weight:700; margin-bottom:10px; letter-spacing:1px; text-align:center; }
+.quiz-row-display {
+  display:flex; justify-content:center; gap:8px; flex-wrap:nowrap;
+}
+.qd-char {
+  width:54px; height:60px; border-radius:14px; display:flex; align-items:center; justify-content:center;
+  font-size:2em; font-weight:700; background:rgba(255,255,255,.7); font-family:var(--font-edu);
+  color:#555; box-shadow:0 2px 6px rgba(0,0,0,.07);
+}
+.qd-char.blank {
+  border:3px dashed #C77DFF; background:rgba(199,125,255,.08); color:transparent;
+  font-size:1.3em; position:relative;
+}
+.qd-char.blank::after {
+  content:'？'; position:absolute; color:#C77DFF; font-size:1.1em; font-weight:900;
+}
+
+/* 4択ボタン */
+.choices-4 {
+  display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:12px;
+}
+.ch-btn {
+  padding:16px 8px; border-radius:18px; border:3px solid rgba(255,255,255,.85);
+  font-family:var(--font-edu); font-size:1.9em; font-weight:700; cursor:pointer;
+  background:var(--card); color:#333;
+  box-shadow: 0 3px 12px rgba(0,0,0,.09);
+  transition: all .16s; position:relative; overflow:hidden;
+}
+.ch-btn::before {
+  content:''; position:absolute; inset:0;
+  background: radial-gradient(circle at 50% 0%,rgba(255,255,255,.3),transparent 65%);
+}
+.ch-btn:hover:not(:disabled) { transform:translateY(-3px) scale(1.04); box-shadow:0 7px 20px rgba(0,0,0,.13); }
+.ch-btn.correct { background:linear-gradient(135deg,#6BCB77,#4CAF50); color:#fff; border-color:#4CAF50; transform:scale(1.06); box-shadow:0 6px 18px rgba(107,203,119,.5); }
+.ch-btn.wrong   { background:linear-gradient(135deg,#FF7B7B,#EF5350); color:#fff; border-color:#EF5350; animation:shake .35s; }
+@keyframes shake { 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} 0%,100%{transform:none} }
+.ch-btn:disabled { cursor:default; }
+
+.result-msg {
+  text-align:center; font-size:1.3em; font-weight:900; padding:12px; border-radius:16px;
+  margin-bottom:10px; display:none; animation: popIn .28s cubic-bezier(.175,.885,.32,1.275);
+}
+@keyframes popIn { from{transform:scale(.7);opacity:0} to{transform:scale(1);opacity:1} }
+.result-msg.show{display:block;}
+.result-msg.ok { background:linear-gradient(135deg,#e8faea,#d4edda); color:#2d6a4f; }
+.result-msg.ng { background:linear-gradient(135deg,#fde8e8,#fdd); color:#7a2323; }
+
+.next-btn {
+  width:100%; padding:14px; border-radius:50px; border:none; cursor:pointer;
+  font-family:var(--font-edu); font-size:1.05em; font-weight:900;
+  background:linear-gradient(135deg,#FF7BAC,#C77DFF); color:#fff;
+  box-shadow:0 6px 18px rgba(199,125,255,.4); transition:all .2s; display:none; margin-top:8px;
+  letter-spacing:1px;
+}
+.next-btn:hover{transform:translateY(-2px);box-shadow:0 8px 26px rgba(199,125,255,.55);}
+.next-btn.show{display:block;animation:popIn .28s;}
+
+/* ════════════════════════════════
+   かいてみよう画面
+════════════════════════════════ */
+.draw-header {
+  display:flex; align-items:center; gap:14px; margin-bottom:14px; flex-wrap:wrap;
+}
+.draw-target-char {
+  font-size:3.2em; font-weight:700; font-family:var(--font-edu);
+  background:linear-gradient(135deg,#FF7BAC,#C77DFF);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  filter:drop-shadow(2px 3px 0 rgba(199,125,255,.2)); line-height:1;
+}
+.draw-info { flex:1; }
+.draw-info .word-hint { font-size:1.05em; color:#888; font-weight:700; }
+.draw-nav { display:flex; gap:8px; margin-left:auto; }
+.dnav-btn {
+  width:40px;height:40px;border-radius:50%;border:none;cursor:pointer;
+  font-size:1.2em;background:var(--card);box-shadow:0 2px 8px rgba(0,0,0,.1);
+  transition:all .18s;
+}
+.dnav-btn:hover{transform:scale(1.15);}
+
+/* キャンバスラッパー */
+.canvas-wrap {
+  position:relative;
+  background:var(--card); border-radius:24px;
+  box-shadow: var(--shadow), 0 0 0 4px rgba(255,255,255,.65);
+  overflow:hidden;
+}
+canvas#guideCanvas, canvas#drawCanvas {
+  display:block; width:100%; aspect-ratio:1;
+  position:absolute; top:0; left:0;
+}
+canvas#guideCanvas { pointer-events:none; }
+canvas#drawCanvas  { cursor:crosshair; touch-action:none; background:transparent; }
+.canvas-wrap { padding-top: min(100%, 440px); height:0; }
+.canvas-wrap canvas { position:absolute; inset:0; width:100%; height:100%; }
+
+.draw-tools {
+  display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; align-items:center;
+}
+.col-btn {
+  width:34px;height:34px;border-radius:50%;border:3px solid #fff;
+  box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer;transition:transform .18s;
+}
+.col-btn:hover,.col-btn.active{transform:scale(1.28);}
+.sz-slider { flex:1; min-width:70px; accent-color:var(--pink); }
+.tool-btn {
+  padding:7px 13px;border-radius:40px;border:none;cursor:pointer;
+  font-family:var(--font-edu);font-size:.83em;font-weight:700;
+  background:var(--card);color:#333;box-shadow:0 2px 8px rgba(0,0,0,.09);transition:all .18s;
+}
+.tool-btn:hover{transform:scale(1.06);background:#fff;}
+.tool-btn.erase{background:linear-gradient(135deg,#ffe0e0,#ffd0d0);}
+
+/* confetti */
+.celebrate-overlay{position:fixed;inset:0;pointer-events:none;z-index:999;overflow:hidden;}
+.cp{position:absolute;top:-24px;border-radius:3px;animation:cfFall linear forwards;}
+@keyframes cfFall{to{transform:translateY(110vh) rotate(720deg);opacity:0;}}
+</style>
+</head>
+<body>
+<div class="sky-deco">
+  <div class="sun"></div>
+  <div class="cloud c1"></div>
+  <div class="cloud c2"></div>
+  <div class="cloud c3"></div>
+</div>
+<div class="celebrate-overlay" id="cel"></div>
+
+<div class="container">
+  <header>
+    <div class="title">🌈 ひらがなランド</div>
+    <div class="subtitle">たのしく おぼえよう！</div>
+  </header>
+
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="showTab('learn',this)">📖 おぼえる</button>
+    <button class="tab-btn" onclick="showTab('quiz',this)">🎯 もんだい</button>
+    <button class="tab-btn" onclick="showTab('draw',this)">✏️ かいてみよう</button>
+  </div>
+
+  <!-- ── おぼえる ── -->
+  <div class="screen active" id="learnScreen">
+    <div class="hira-table" id="hiraTable"></div>
+  </div>
+
+  <!-- ── もんだい ── -->
+  <div class="screen" id="quizScreen">
+    <div class="quiz-row-tabs" id="quizRowTabs"></div>
+    <div class="quiz-strip">
+      <div class="quiz-strip-label">ここにはいるひらがなは？</div>
+      <div class="quiz-row-display" id="quizDisplay"></div>
+    </div>
+    <div class="result-msg" id="resultMsg"></div>
+    <div class="choices-4" id="choices4"></div>
+    <button class="next-btn" id="nextBtn" onclick="nextQuiz()">つぎへ ➡️</button>
+  </div>
+
+  <!-- ── かいてみよう ── -->
+  <div class="screen" id="drawScreen">
+    <div class="draw-header">
+      <div class="draw-target-char" id="drawTargetChar">あ</div>
+      <div class="draw-info">
+        <div class="word-hint" id="drawWordHint">🍬 あめ</div>
+      </div>
+      <div class="draw-nav">
+        <button class="dnav-btn" onclick="drawNav(-1)">◀</button>
+        <button class="dnav-btn" onclick="drawNav(1)">▶</button>
+      </div>
+    </div>
+    <div class="canvas-wrap" id="canvasWrap">
+      <canvas id="guideCanvas"></canvas>
+      <canvas id="drawCanvas"></canvas>
+    </div>
+    <div class="draw-tools">
+      <div class="col-btn active" style="background:#2D3436" onclick="setCol('#2D3436',this)"></div>
+      <div class="col-btn" style="background:#FF7BAC" onclick="setCol('#FF7BAC',this)"></div>
+      <div class="col-btn" style="background:#4ECDC4" onclick="setCol('#4ECDC4',this)"></div>
+      <div class="col-btn" style="background:#FF9F43" onclick="setCol('#FF9F43',this)"></div>
+      <div class="col-btn" style="background:#C77DFF" onclick="setCol('#C77DFF',this)"></div>
+      <input type="range" class="sz-slider" id="szSlider" min="4" max="26" value="9">
+      <button class="tool-btn erase" onclick="clearDraw()">🗑️ けす</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════
+   データ定義
+   配列は行×列: rows[行][列=あいうえお]
+   空セル: null
+═══════════════════════════════════════════ */
+const ROWS = [
+  // あぎょう
+  [
+    { ch:'あ', wd:'🍬 あめ'   },
+    { ch:'い', wd:'🐕 いぬ'   },
+    { ch:'う', wd:'🐇 うさぎ' },
+    { ch:'え', wd:'🖼️ えほん'  },
+    { ch:'お', wd:'🎵 おと'   },
+  ],
+  // かぎょう
+  [
+    { ch:'か', wd:'🦀 かに'   },
+    { ch:'き', wd:'🌳 きのこ' },
+    { ch:'く', wd:'🐻 くま'   },
+    { ch:'け', wd:'🎂 けーき' },
+    { ch:'こ', wd:'🪀 こま'   },
+  ],
+  // さぎょう
+  [
+    { ch:'さ', wd:'🐠 さかな' },
+    { ch:'し', wd:'🦁 しし'   },
+    { ch:'す', wd:'🍉 すいか' },
+    { ch:'せ', wd:'🧼 せっけん'},
+    { ch:'そ', wd:'🌙 そら'   },
+  ],
+  // たぎょう
+  [
+    { ch:'た', wd:'🐙 たこ'   },
+    { ch:'ち', wd:'🦋 ちょう' },
+    { ch:'つ', wd:'🌙 つき'   },
+    { ch:'て', wd:'✋ てのひら'},
+    { ch:'と', wd:'🐦 とり'   },
+  ],
+  // なぎょう
+  [
+    { ch:'な', wd:'🍆 なす'   },
+    { ch:'に', wd:'🌈 にじ'   },
+    { ch:'ぬ', wd:'🧸 ぬいぐるみ'},
+    { ch:'ね', wd:'🐈 ねこ'   },
+    { ch:'の', wd:'🚃 のりもの'},
+  ],
+  // はぎょう
+  [
+    { ch:'は', wd:'🌸 はな'   },
+    { ch:'ひ', wd:'🐑 ひつじ' },
+    { ch:'ふ', wd:'⛵ ふね'   },
+    { ch:'へ', wd:'🐍 へび'   },
+    { ch:'ほ', wd:'⭐ ほし'   },
+  ],
+  // まぎょう
+  [
+    { ch:'ま', wd:'🪄 まほう' },
+    { ch:'み', wd:'🍊 みかん' },
+    { ch:'む', wd:'🐞 むし'   },
+    { ch:'め', wd:'👁️ めだま'  },
+    { ch:'も', wd:'🍑 もも'   },
+  ],
+  // やぎょう (い・え は空)
+  [
+    { ch:'や', wd:'🐐 やぎ'   },
+    null,
+    { ch:'ゆ', wd:'❄️ ゆき'   },
+    null,
+    { ch:'よ', wd:'🍀 よつば' },
+  ],
+  // らぎょう
+  [
+    { ch:'ら', wd:'🦁 らいおん'},
+    { ch:'り', wd:'🐿️ りす'   },
+    { ch:'る', wd:'💎 るびー' },
+    { ch:'れ', wd:'🍋 れもん' },
+    { ch:'ろ', wd:'🕯️ ろうそく'},
+  ],
+  // わぎょう (い・う・え は空)
+  [
+    { ch:'わ', wd:'🐊 わに'   },
+    null,
+    { ch:'を', wd:'👋 てをふる'},
+    null,
+    { ch:'ん', wd:'🤔 うーん'  },
+  ],
+];
+
+// フラットリスト (クイズ用)
+const FLAT = ROWS.flat().filter(Boolean);
+
+// 行名
+const ROW_NAMES = ['あぎょう','かぎょう','さぎょう','たぎょう','なぎょう',
+                   'はぎょう','まぎょう','やぎょう','らぎょう','わぎょう'];
+const ROW_CLASSES = ['row-a','row-ka','row-sa','row-ta','row-na','row-ha','row-ma','row-ya','row-ra','row-wa'];
+
+/* ═══ おぼえる画面 ═══ */
+function buildLearn() {
+  const tbl = document.getElementById('hiraTable');
+  tbl.innerHTML = '';
+  ROWS.forEach((row, ri) => {
+    row.forEach(cell => {
+      const div = document.createElement('div');
+      if (!cell) {
+        div.className = 'hira-cell empty';
+      } else {
+        div.className = `hira-cell ${ROW_CLASSES[ri]}`;
+        div.innerHTML = `<div class="ch">${cell.ch}</div><div class="em">${cell.wd.split(' ')[0]}</div><div class="wd">${cell.wd.split(' ').slice(1).join(' ')}</div>`;
+        div.onclick = (e) => {
+          speakChar(cell.ch);
+          spawnStar(e.clientX, e.clientY);
+        };
+      }
+      tbl.appendChild(div);
+    });
+  });
+}
+
+/* ═══ もんだい画面 ═══ */
+let quizRowIdx = 0;   // 現在の行インデックス
+let quizBlankIdx = 0; // その行の中で空白にするセルインデックス(非nullセルの中)
+let quizAnswered = false;
+
+function buildQuizTabs() {
+  const tabs = document.getElementById('quizRowTabs');
+  tabs.innerHTML = '';
+  ROW_NAMES.forEach((name, i) => {
+    const b = document.createElement('button');
+    b.className = 'qr-btn' + (i===0?' active':'');
+    b.textContent = name;
+    b.onclick = () => {
+      document.querySelectorAll('.qr-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      quizRowIdx = i;
+      startRowQuiz();
+    };
+    tabs.appendChild(b);
+  });
+}
+
+function startRowQuiz() {
+  quizAnswered = false;
+  document.getElementById('resultMsg').className = 'result-msg';
+  document.getElementById('nextBtn').classList.remove('show');
+
+  const row = ROWS[quizRowIdx];
+  const nonNullCells = row.map((c,i)=>({cell:c,i})).filter(x=>x.cell);
+  // ランダムに1つ選ぶ
+  const pick = nonNullCells[Math.floor(Math.random()*nonNullCells.length)];
+  quizBlankIdx = pick.i;
+  const answer = pick.cell;
+
+  // 表示行を描画
+  const disp = document.getElementById('quizDisplay');
+  disp.innerHTML = '';
+  row.forEach((cell, ci) => {
+    const div = document.createElement('div');
+    div.className = 'qd-char' + (ci===quizBlankIdx ? ' blank' : '');
+    if (cell && ci !== quizBlankIdx) div.textContent = cell.ch;
+    disp.appendChild(div);
+  });
+
+  // 4択: 正解1 + 他行からランダム3
+  const others = FLAT.filter(x=>x.ch !== answer.ch);
+  const wrongs = shuffle(others).slice(0,3);
+  const opts = shuffle([answer, ...wrongs]);
+
+  const c4 = document.getElementById('choices4');
+  c4.innerHTML = '';
+  opts.forEach(opt => {
+    const b = document.createElement('button');
+    b.className = 'ch-btn';
+    b.textContent = opt.ch;
+    b.onclick = () => { speakChar(opt.ch); checkAnswer(b, opt.ch === answer.ch, answer); };
+    c4.appendChild(b);
+  });
+}
+
+function checkAnswer(btn, correct, answer) {
+  if (quizAnswered) return;
+  quizAnswered = true;
+  document.querySelectorAll('.ch-btn').forEach(b=>b.disabled=true);
+  const msg = document.getElementById('resultMsg');
+  if (correct) {
+    btn.classList.add('correct');
+    msg.textContent = '⭐ せいかい！ すごいね！';
+    msg.className = 'result-msg ok show';
+    playCorrect();
+    celebrate();
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('.ch-btn').forEach(b=>{ if(b.textContent===answer.ch) b.classList.add('correct'); });
+    msg.textContent = `💦 ざんねん！ こたえは「${answer.ch}」だよ`;
+    msg.className = 'result-msg ng show';
+    playWrong();
+  }
+  document.getElementById('nextBtn').classList.add('show');
+}
+
+function nextQuiz() {
+  startRowQuiz();
+}
+
+/* ランダムボタンも用意 */
+function randomQuizRow() {
+  quizRowIdx = Math.floor(Math.random()*ROWS.length);
+  document.querySelectorAll('.qr-btn').forEach((b,i)=>b.classList.toggle('active',i===quizRowIdx));
+  startRowQuiz();
+}
+
+/* ═══ かいてみよう画面 ═══ */
+let drawIdx = 0;
+let drawColor = '#2D3436';
+let isDrawing = false, lx = 0, ly = 0;
+let gCanvas, dCanvas, gCtx, dCtx;
+let canvasReady = false;
+
+function initDraw() {
+  gCanvas = document.getElementById('guideCanvas');
+  dCanvas = document.getElementById('drawCanvas');
+  const wrap = document.getElementById('canvasWrap');
+
+  function resize() {
+    const sz = wrap.clientWidth;
+    gCanvas.width = dCanvas.width = sz;
+    gCanvas.height = dCanvas.height = sz;
+    gCtx = gCanvas.getContext('2d');
+    dCtx = dCanvas.getContext('2d');
+    dCtx.lineCap = dCtx.lineJoin = 'round';
+    drawGuide();
+  }
+
+  if (!canvasReady) {
+    dCanvas.addEventListener('mousedown',  e => startD(pos(e)));
+    dCanvas.addEventListener('mousemove',  e => doD(pos(e)));
+    dCanvas.addEventListener('mouseup',    ()=> isDrawing=false);
+    dCanvas.addEventListener('mouseleave', ()=> isDrawing=false);
+    dCanvas.addEventListener('touchstart', e => { e.preventDefault(); startD(pos(e.touches[0])); }, {passive:false});
+    dCanvas.addEventListener('touchmove',  e => { e.preventDefault(); doD(pos(e.touches[0])); }, {passive:false});
+    dCanvas.addEventListener('touchend',   ()=> isDrawing=false, {passive:false});
+    canvasReady = true;
+  }
+  resize();
+  new ResizeObserver(resize).observe(wrap);
+  updateDrawInfo();
+}
+
+function pos(e) {
+  const r = dCanvas.getBoundingClientRect();
+  const sx = dCanvas.width / r.width;
+  const sy = dCanvas.height / r.height;
+  return { x:(e.clientX-r.left)*sx, y:(e.clientY-r.top)*sy };
+}
+function startD(p) { isDrawing=true; lx=p.x; ly=p.y; }
+function doD(p) {
+  if (!isDrawing) return;
+  const sz = parseInt(document.getElementById('szSlider').value);
+  dCtx.strokeStyle = drawColor;
+  dCtx.lineWidth = sz;
+  dCtx.beginPath(); dCtx.moveTo(lx,ly); dCtx.lineTo(p.x,p.y); dCtx.stroke();
+  lx=p.x; ly=p.y;
+}
+function clearDraw() { if(dCtx) dCtx.clearRect(0,0,dCanvas.width,dCanvas.height); }
+function setCol(c,el) {
+  drawColor=c;
+  document.querySelectorAll('.col-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+/* ガイドキャンバス描画: 縦横中心1本ずつ + 薄い文字 */
+function drawGuide() {
+  const s = gCanvas.width;
+  gCtx.clearRect(0,0,s,s);
+
+  // 十字線 (薄い)
+  gCtx.strokeStyle = 'rgba(0,0,0,0.10)';
+  gCtx.lineWidth = 1.5;
+  // 縦中心
+  gCtx.beginPath(); gCtx.moveTo(s/2,0); gCtx.lineTo(s/2,s); gCtx.stroke();
+  // 横中心
+  gCtx.beginPath(); gCtx.moveTo(0,s/2); gCtx.lineTo(s,s/2); gCtx.stroke();
+
+  // 外枠
+  gCtx.strokeStyle = 'rgba(0,0,0,0.08)';
+  gCtx.lineWidth = 2;
+  gCtx.strokeRect(4,4,s-8,s-8);
+
+  // 薄いなぞり文字
+  const item = FLAT.find(x=>x.ch === getCurrentDrawChar());
+  if (!item) return;
+  gCtx.font = `600 ${s*0.72}px 'Klee One','Hiragino Mincho ProN',serif`;
+  gCtx.textAlign = 'center';
+  gCtx.textBaseline = 'middle';
+  gCtx.fillStyle = 'rgba(199,125,255,0.13)';
+  gCtx.fillText(item.ch, s/2, s/2 + s*0.02);
+}
+
+function getCurrentDrawChar() {
+  return FLAT[drawIdx]?.ch || 'あ';
+}
+function updateDrawInfo() {
+  const item = FLAT[drawIdx];
+  document.getElementById('drawTargetChar').textContent = item.ch;
+  document.getElementById('drawWordHint').textContent = item.wd;
+  if (gCanvas) { clearDraw(); drawGuide(); }
+}
+function drawNav(dir) {
+  drawIdx = (drawIdx + dir + FLAT.length) % FLAT.length;
+  updateDrawInfo();
+}
+
+/* ═══ タブ切替 ═══ */
+function showTab(name, btn) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(name+'Screen').classList.add('active');
+  btn.classList.add('active');
+  if (name==='quiz') { buildQuizTabs(); startRowQuiz(); }
+  if (name==='draw') { setTimeout(initDraw, 50); }
+}
+
+/* ═══ 音声読み上げ (Web Speech API) ═══ */
+function speakChar(ch) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(ch);
+  utter.lang = 'ja-JP';
+  utter.rate = 0.85;
+  utter.pitch = 1.1;
+  const voices = window.speechSynthesis.getVoices();
+  const jaVoice = voices.find(v => v.lang.startsWith('ja'));
+  if (jaVoice) utter.voice = jaVoice;
+  window.speechSynthesis.speak(utter);
+}
+if (window.speechSynthesis) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+}
+function playCorrect() {}
+function playWrong()   {}
+
+/* ═══ 星 & 紙吹雪 ═══ */
+function spawnStar(cx,cy) {
+  ['⭐','✨','🌟','💫'].forEach((s,i) => {
+    const d=document.createElement('div');
+    d.className='star-burst';
+    d.textContent=s;
+    d.style.left=(cx+(Math.random()-.5)*50)+'px';
+    d.style.top=(cy-10)+'px';
+    d.style.animationDelay=(i*.07)+'s';
+    document.body.appendChild(d);
+    setTimeout(()=>d.remove(),1200);
+  });
+}
+function celebrate() {
+  const overlay=document.getElementById('cel');
+  const cols=['#FF7BAC','#C77DFF','#4ECDC4','#FFD93D','#FF9F43','#6BCB77'];
+  for(let i=0;i<22;i++) {
+    setTimeout(()=>{
+      const p=document.createElement('div');
+      p.className='cp';
+      p.style.left=Math.random()*100+'vw';
+      const sz=7+Math.random()*7;
+      p.style.width=sz+'px'; p.style.height=sz+'px';
+      p.style.background=cols[Math.floor(Math.random()*cols.length)];
+      p.style.borderRadius=Math.random()>.5?'50%':'2px';
+      p.style.animationDuration=(1.4+Math.random())+'s';
+      overlay.appendChild(p);
+      setTimeout(()=>p.remove(),2600);
+    },i*35);
+  }
+}
+
+/* ═══ ユーティリティ ═══ */
+function shuffle(a) { return a.slice().sort(()=>Math.random()-.5); }
+
+/* ═══ 初期化 ═══ */
+buildLearn();
+
+// クイズ初期化 (画面が開かれたときに呼ぶ)
+// buildQuizTabs + startRowQuiz は showTab で呼ばれる
+</script>
+</body>
+</html>

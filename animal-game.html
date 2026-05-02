@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>どうぶつをつかまえろ！</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Kaisei+Decol:wght@400;700&family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; touch-action: manipulation; }
+
+  body {
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    background: #6ab84a;
+    height: 100dvh; height: 100vh;
+    overflow: hidden;
+    user-select: none;
+    display: flex; flex-direction: column;
+  }
+
+  .screen { display: none; position: fixed; inset: 0; }
+  .screen.active { display: flex; flex-direction: column; align-items: center; }
+
+  /* ===== START ===== */
+  #startScreen {
+    justify-content: center;
+    background: linear-gradient(160deg, #a8e6cf 0%, #87CEEB 50%, #dcedc1 100%);
+  }
+  .title-box { text-align: center; animation: bounceIn 0.7s cubic-bezier(.36,.07,.19,.97); }
+  .title-main {
+    font-family: 'Kaisei Decol', serif;
+    font-size: clamp(2rem, 8vw, 3.5rem); color: #2d5a1b;
+    text-shadow: 3px 3px 0 #a8e56a, 5px 5px 0 rgba(0,0,0,0.1);
+    line-height: 1.1;
+  }
+  .title-sub { font-size: clamp(0.95rem, 3.5vw, 1.3rem); color: #3d6b22; margin-top: 8px; }
+  .start-animals { font-size: clamp(2.2rem, 9vw, 3.5rem); margin: 14px 0; animation: wiggle 1.5s ease-in-out infinite; }
+  .level-select { display: flex; gap: 12px; margin: 12px 0; flex-wrap: wrap; justify-content: center; }
+  .level-btn {
+    padding: 11px 22px; border: none; border-radius: 50px;
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    font-size: clamp(0.95rem, 3.5vw, 1.15rem); font-weight: 800;
+    cursor: pointer; transition: transform 0.12s, box-shadow 0.12s;
+    box-shadow: 0 5px 0 rgba(0,0,0,0.18); outline: none;
+  }
+  .level-btn:active { transform: scale(0.95) translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,0.15); }
+  .level-btn.lv1 { background: #78d97a; color: #1a4d1a; }
+  .level-btn.lv2 { background: #f0b800; color: #5a3200; text-shadow: 0 1px 0 rgba(255,255,255,0.4); }
+  .level-btn.lv3 { background: #FF6B35; color: #fff; }
+  .level-btn.selected { outline: 4px solid rgba(255,255,255,0.9); transform: scale(1.07); }
+  .start-btn {
+    padding: 15px 44px;
+    background: linear-gradient(135deg, #FF6B35, #ff9a5c);
+    color: #fff; border: none; border-radius: 50px;
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    font-size: clamp(1.2rem, 5vw, 1.6rem); font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 6px 0 #c94400, 0 8px 20px rgba(255,107,53,0.35);
+    transition: transform 0.12s, box-shadow 0.12s;
+    animation: pulse 2s ease-in-out infinite; margin-top: 4px;
+  }
+  .start-btn:active { transform: scale(0.95) translateY(4px); box-shadow: 0 2px 0 #c94400; }
+  .start-note { font-size: 0.88rem; color: #4a6b30; margin-top: 12px; line-height: 1.6; }
+
+  /* ===== GAME SCREEN ===== */
+  #gameScreen { background: #6ab84a; }
+
+  /* HUD */
+  .hud {
+    width: 100%; display: flex; justify-content: space-between; align-items: center;
+    padding: 7px 12px 5px;
+    background: rgba(0,0,0,0.2);
+    flex-shrink: 0; gap: 6px;
+  }
+  .hud-item {
+    display: flex; align-items: center; gap: 5px;
+    background: rgba(255,255,255,0.9); border-radius: 20px; padding: 4px 12px;
+    font-weight: 800; font-size: clamp(0.95rem, 3.2vw, 1.15rem); color: #2d5a1b;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.12);
+  }
+  .hud-item .lbl { font-size: 0.68em; opacity: 0.65; }
+  #timerDisplay.urgent { animation: timerPulse 0.45s ease-in-out infinite; }
+  #timerDisplay.urgent .tval { color: #e00; }
+
+  /* ===== PLAY FIELD — fixed height, clips overflow on sides only ===== */
+  .play-field {
+    position: relative;
+    width: 100%;
+    flex-shrink: 0;
+    /* Fixed height set via JS */
+    background: radial-gradient(ellipse at 50% 30%, #8fd85a 0%, #6ab84a 70%);
+    /* Do NOT clip overflow-y so animals popping up near bottom are visible & tappable */
+    overflow: visible;
+  }
+  .play-field::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle, rgba(0,0,0,0.055) 1px, transparent 1px);
+    background-size: 26px 26px;
+    pointer-events: none;
+    border-radius: 0;
+  }
+
+  /* Each hole wrapper: sits entirely within play-field.
+     The animal pops upward out of it (overflow:visible on play-field). */
+  .hole-wrap {
+    position: absolute;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    overflow: visible;
+    /* z-index set per row in JS */
+  }
+  .hole-mouth {
+    position: absolute;
+    bottom: 0; left: 50%; transform: translateX(-50%);
+    background: radial-gradient(ellipse at 50% 65%, #2a1a00 0%, #130a00 60%, #060300 100%);
+    border-radius: 50%;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.55), inset 0 -2px 6px rgba(255,180,80,0.06);
+  }
+  .hole-rim {
+    position: absolute;
+    bottom: -3px; left: 50%; transform: translateX(-50%);
+    border-radius: 50%;
+    background: transparent;
+    border: 4px solid rgba(90,50,0,0.3);
+    pointer-events: none;
+  }
+  /* The animal — positioned absolutely inside wrap, pops above hole */
+  .hole-animal {
+    position: absolute;
+    left: 50%; transform: translateX(-50%);
+    line-height: 1; text-align: center;
+    transition: bottom 0.15s cubic-bezier(.34,1.5,.64,1);
+    pointer-events: none;
+    z-index: 5;
+    white-space: nowrap;
+    filter: drop-shadow(1px 2px 3px rgba(0,0,0,0.35));
+  }
+
+  /* Hit flash */
+  .hit-flash {
+    position: absolute; top: 0; left: 50%;
+    transform: translateX(-50%);
+    font-size: 1.4em; font-weight: 800;
+    pointer-events: none; z-index: 200;
+    animation: hitAnim 0.55s ease-out forwards;
+    white-space: nowrap;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.2);
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+  }
+
+  /* ===== CATCH PEN ===== */
+  .catch-pen {
+    flex: 1;          /* takes all remaining space */
+    min-height: 0;
+    width: 100%;
+    background: linear-gradient(180deg, #e8c87a 0%, #ddb85a 100%);
+    border-top: 6px solid #b08020;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  /* Fence posts above the border */
+  .catch-pen::before {
+    content: '';
+    position: absolute;
+    top: -22px; left: 0; right: 0; height: 22px;
+    background: repeating-linear-gradient(
+      90deg,
+      #8a6010 0px, #a07828 13px,
+      transparent 13px, transparent 34px
+    );
+    pointer-events: none;
+  }
+  .catch-pen::after {
+    content: '';
+    position: absolute;
+    top: -6px; left: 0; right: 0; height: 6px;
+    background: linear-gradient(180deg, #c8a030, #b08020);
+    pointer-events: none;
+  }
+  .pen-header {
+    flex-shrink: 0;
+    padding: 4px 8px 2px;
+    font-size: clamp(0.7rem, 2.5vw, 0.85rem);
+    font-weight: 800; color: #7a5010;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .pen-animals {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    padding: 2px 6px 4px 6px;
+    gap: 2px;
+    overflow: hidden;
+  }
+  .pen-animal {
+    font-size: clamp(1.4rem, 4.8vw, 2rem);
+    animation: penBounce 0.38s cubic-bezier(.36,.07,.19,.97);
+    line-height: 1.15;
+  }
+
+  /* ===== RESULT ===== */
+  #resultScreen {
+    justify-content: center;
+    background: linear-gradient(160deg, #a8e6cf 0%, #87CEEB 50%, #dcedc1 100%);
+    padding: 16px;
+  }
+  .result-box {
+    text-align: center; padding: 22px 20px; max-width: 420px; width: 100%;
+    animation: bounceIn 0.6s cubic-bezier(.36,.07,.19,.97);
+  }
+  .result-emoji { font-size: clamp(2.8rem, 11vw, 4.5rem); animation: wiggle 1s ease-in-out infinite; }
+  .result-title {
+    font-family: 'Kaisei Decol', serif;
+    font-size: clamp(1.7rem, 7vw, 2.8rem); color: #2d5a1b;
+    text-shadow: 2px 2px 0 #a8e56a; margin: 8px 0;
+  }
+  .result-count { font-size: clamp(1rem, 3.8vw, 1.3rem); color: #4a3800; margin-bottom: 6px; }
+  .result-count span { font-size: 2em; color: #e06000; font-weight: 800; }
+  .result-praise {
+    font-size: clamp(1rem, 3.8vw, 1.35rem); color: #2d5a1b; font-weight: 700;
+    padding: 10px 16px; background: rgba(255,255,255,0.65); border-radius: 16px;
+    margin: 10px 0; line-height: 1.6; white-space: pre-line;
+  }
+  .caught-preview {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 2px;
+    margin: 10px 0; max-height: 90px; overflow: hidden;
+    font-size: clamp(1.3rem, 4.5vw, 1.9rem);
+    background: rgba(255,255,255,0.4); border-radius: 14px; padding: 8px;
+  }
+  .result-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 14px; }
+  .retry-btn {
+    padding: 12px 32px; background: linear-gradient(135deg, #78d97a, #4db353);
+    color: #fff; border: none; border-radius: 50px;
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    font-size: clamp(1rem, 3.8vw, 1.3rem); font-weight: 800;
+    cursor: pointer; box-shadow: 0 5px 0 #2d7a32; transition: transform 0.12s, box-shadow 0.12s;
+  }
+  .retry-btn:active { transform: scale(0.95) translateY(3px); box-shadow: 0 2px 0 #2d7a32; }
+  .home-btn {
+    padding: 12px 24px; background: linear-gradient(135deg, #87CEEB, #5ba8d4);
+    color: #fff; border: none; border-radius: 50px;
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    font-size: clamp(1rem, 3.8vw, 1.3rem); font-weight: 800;
+    cursor: pointer; box-shadow: 0 5px 0 #3a7fb5; transition: transform 0.12s, box-shadow 0.12s;
+  }
+  .home-btn:active { transform: scale(0.95) translateY(3px); box-shadow: 0 2px 0 #3a7fb5; }
+
+  /* ===== ANIMATIONS ===== */
+  @keyframes bounceIn {
+    0%   { transform: scale(0.3) rotate(-5deg); opacity: 0; }
+    60%  { transform: scale(1.08) rotate(2deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+  @keyframes wiggle { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+  @keyframes pulse  { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  @keyframes timerPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+  @keyframes hitAnim {
+    0%   { transform: translateX(-50%) translateY(0) scale(0.6); opacity: 1; }
+    60%  { transform: translateX(-50%) translateY(-44px) scale(1.3); opacity: 1; }
+    100% { transform: translateX(-50%) translateY(-72px) scale(1); opacity: 0; }
+  }
+  @keyframes penBounce {
+    0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
+    65%  { transform: scale(1.2) rotate(4deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+</style>
+</head>
+<body>
+
+<!-- START -->
+<div id="startScreen" class="screen active">
+  <div class="title-box">
+    <div class="title-main">どうぶつを<br>つかまえろ！</div>
+    <div class="title-sub">🌿 あなからひょこっ！🌿</div>
+    <div class="start-animals">🐰🦊🐻🐼🐸🐹</div>
+    <div style="font-size:0.95rem;color:#3d6b22;margin-bottom:10px;font-weight:700;">レベルをえらんでね</div>
+    <div class="level-select">
+      <button class="level-btn lv1 selected" data-level="1" onclick="selectLevel(1)">🌟 かんたん</button>
+      <button class="level-btn lv2" data-level="2" onclick="selectLevel(2)">🌟🌟 ふつう</button>
+      <button class="level-btn lv3" data-level="3" onclick="selectLevel(3)">🌟🌟🌟 むずかしい</button>
+    </div>
+    <button class="start-btn" onclick="startGame()">🎮 スタート！</button>
+    <div class="start-note">💣 ばくだんはさわらないで！ まちがえたら－１てん<br>（Lv2・3から爆弾がでるよ）</div>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="gameScreen" class="screen">
+  <div class="hud">
+    <div class="hud-item">⭐ <span id="scoreVal">0</span><span class="lbl"> てん</span></div>
+    <div class="hud-item">🎯 <span id="levelVal">Lv1</span></div>
+    <div class="hud-item" id="timerDisplay">⏱ <span class="tval" id="timerVal">30</span><span class="lbl"> びょう</span></div>
+  </div>
+  <!-- play field: fixed height via JS -->
+  <div class="play-field" id="playField"></div>
+  <!-- catch pen: fills remaining space -->
+  <div class="catch-pen" id="catchPen">
+    <div class="pen-header">🏡 つかまえた どうぶつたち</div>
+    <div class="pen-animals" id="penAnimals"></div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div id="resultScreen" class="screen">
+  <div class="result-box">
+    <div class="result-emoji" id="resultEmoji">🎉</div>
+    <div class="result-title" id="resultTitle">すごい！</div>
+    <div class="result-count">つかまえた： <span id="resultCount">0</span> ひき！　⭐ <span id="resultScore">0</span> てん！</div>
+    <div class="result-praise" id="resultPraise">よくがんばりました！</div>
+    <div class="caught-preview" id="caughtPreview"></div>
+    <div class="result-btns">
+      <button class="retry-btn" onclick="retryGame()">🔄 もういちど</button>
+      <button class="home-btn" onclick="goHome()">🏠 トップへ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const ANIMALS = ['🐰','🦊','🐻','🐼','🐸','🐱','🐶','🐹','🦔','🐿️','🦝','🐨','🐧','🦉','🐭','🐮','🐷','🐯'];
+
+const LEVEL_CONFIG = {
+  1: { showTime: 2000, interval: 1400, bombChance: 0.00, maxActive: 2 },
+  2: { showTime: 1300, interval: 1000, bombChance: 0.18, maxActive: 3 },
+  3: { showTime: 800,  interval:  650, bombChance: 0.26, maxActive: 4 },
+};
+const GAME_TIME = 30;
+
+// Layout constants (% of screen)
+const PLAY_FIELD_RATIO = 0.68; // play field = 68% of screen height (after HUD)
+const PEN_RATIO        = 0.32; // pen = remaining 32%
+
+let level = 1, score = 0, timeLeft = GAME_TIME;
+let caughtAnimals = [], gameActive = false;
+let timerInterval = null, spawnInterval = null;
+let holes = [];
+
+function selectLevel(lv) {
+  level = lv;
+  document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelector(`.level-btn[data-level="${lv}"]`).classList.add('selected');
+}
+
+/* =========================================================
+   BUILD SCENE
+   Key design:
+   - play-field has a FIXED pixel height (no flex:1)
+     so we know exactly where the bottom edge is.
+   - Holes are positioned with `bottom` from the
+     play-field's bottom, so row 3 holes sit safely
+     above the bottom edge with room to pop up.
+   - overflow:visible on play-field so animals that
+     pop above the top aren't clipped.
+   - The hole-wrap tap area covers from the hole mouth
+     upward to the full animal height.
+   ========================================================= */
+function buildScene() {
+  const field = document.getElementById('playField');
+  field.innerHTML = '';
+  holes = [];
+
+  // -- Set fixed height for play-field --
+  const screenH = window.innerHeight;
+  const hudH    = document.querySelector('.hud').offsetHeight;
+  const available = screenH - hudH;
+  const fieldH  = Math.round(available * PLAY_FIELD_RATIO);
+  field.style.height = fieldH + 'px';
+
+  const W = field.offsetWidth;
+  const H = fieldH;
+
+  // -- Hole sizing --
+  // 3 cols × 3 rows, staggered
+  const COLS = 3, ROWS = 3;
+  const cellW = W / COLS;
+  const cellH = H / ROWS;
+
+  // Hole oval: width = ~50% of cell, height = ~38% of cellH
+  // Use a comfortable max so they never feel cramped
+  const holeW  = Math.min(cellW * 0.50, 88);
+  const holeH  = Math.min(cellH * 0.36, holeW * 0.44);
+  // How high animal pops ABOVE the hole mouth
+  const showH  = holeW * 0.82;
+  const fontSize = holeW * 0.76;
+
+  // Margin from field edges
+  const padTop    = showH + 8;   // top row hole mouth starts below where animal fully pops, so animal never overlaps HUD
+  const padBottom = holeH + showH + 16; // keep hole mouth + full pop-up within field
+
+  // Vertical positions of hole-mouth centers (from field top)
+  // Spread 3 rows evenly within [padTop, H - padBottom]
+  const usableH = H - padTop - padBottom;
+  const rowCY = [0, 1, 2].map(r => padTop + holeH / 2 + usableH * (r / (ROWS - 1)));
+
+  for (let row = 0; row < ROWS; row++) {
+    for (let col = 0; col < COLS; col++) {
+      // Stagger: odd rows offset right by half cell
+      const staggerX = (row % 2 === 1) ? cellW * 0.5 : 0;
+      const cx = cellW * (col + 0.5) + staggerX;
+      if (cx < holeW * 0.55 || cx > W - holeW * 0.55) continue;
+
+      // cy = center-y of hole mouth (from top of field)
+      const cy = rowCY[row];
+
+      // Hole mouth top edge (from field top)
+      const mouthTop = cy - holeH / 2;
+
+      // Wrap covers: from top of animal pop (above mouth) down to mouth bottom
+      // So wrap top = mouthTop - showH, wrap bottom = mouthTop + holeH
+      const wrapTop  = mouthTop - showH;
+      const wrapH    = showH + holeH;
+      const wrapW    = holeW * 1.15; // slightly wider for easier tap
+      const wrapLeft = cx - wrapW / 2;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'hole-wrap';
+      wrap.style.cssText = [
+        `width:${wrapW}px`,
+        `height:${wrapH}px`,
+        `left:${wrapLeft}px`,
+        `top:${wrapTop}px`,
+        `z-index:${10 + row * 2}`,
+      ].join(';');
+
+      // Mouth oval — sits at bottom of wrap
+      const mouth = document.createElement('div');
+      mouth.className = 'hole-mouth';
+      mouth.style.cssText = `width:${holeW}px;height:${holeH}px;`;
+      wrap.appendChild(mouth);
+
+      // Rim
+      const rim = document.createElement('div');
+      rim.className = 'hole-rim';
+      rim.style.cssText = `width:${holeW + 8}px;height:${holeH + 6}px;bottom:-3px;`;
+      wrap.appendChild(rim);
+
+      // Animal — hidden inside hole (bottom = 0 = at mouth bottom), pops to bottom = showH
+      const animalEl = document.createElement('div');
+      animalEl.className = 'hole-animal';
+      animalEl.style.cssText = `font-size:${fontSize}px;bottom:0px;`;
+      wrap.appendChild(animalEl);
+
+      const capturedIdx = holes.length;
+      wrap.addEventListener('pointerdown', e => { e.preventDefault(); tapHole(capturedIdx); });
+
+      field.appendChild(wrap);
+      holes.push({ active:false, isBomb:false, currentAnimal:'', animalEl, wrapEl:wrap, holeH, showH, timer:null });
+    }
+  }
+}
+
+/* ---- spawn ---- */
+function showCreature(idx) {
+  const h = holes[idx];
+  const cfg = LEVEL_CONFIG[level];
+  const isBomb = Math.random() < cfg.bombChance;
+  h.active = true; h.isBomb = isBomb;
+  h.currentAnimal = isBomb ? '💣' : ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
+
+  const el = h.animalEl;
+  el.textContent = h.currentAnimal;
+  el.style.transition = 'none';
+  el.style.bottom = '0px';
+  void el.offsetHeight;
+  el.style.transition = 'bottom 0.15s cubic-bezier(.34,1.5,.64,1)';
+  el.style.bottom = h.showH + 'px';
+
+  h.timer = setTimeout(() => hideCreature(idx), cfg.showTime);
+}
+
+function hideCreature(idx) {
+  const h = holes[idx];
+  if (!h.active) return;
+  clearTimeout(h.timer);
+  h.active = false;
+  h.animalEl.style.bottom = '0px';
+  setTimeout(() => { if (!h.active) h.animalEl.textContent = ''; }, 180);
+}
+
+/* ---- tap ---- */
+function tapHole(idx) {
+  if (!gameActive) return;
+  const h = holes[idx];
+  if (!h.active) return;
+  if (h.isBomb) {
+    score = Math.max(0, score - 1);
+    showHitEffect(h.wrapEl, '💥 -1', '#FF3300');
+    hideCreature(idx);
+  } else {
+    score++;
+    caughtAnimals.push(h.currentAnimal);
+    showHitEffect(h.wrapEl, '✨ +1', '#FFD700');
+    const emoji = h.currentAnimal;
+    hideCreature(idx);
+    setTimeout(() => addToPen(emoji), 80);
+  }
+  updateScore();
+}
+
+function showHitEffect(wrapEl, text, color) {
+  const f = document.createElement('div');
+  f.className = 'hit-flash'; f.textContent = text; f.style.color = color;
+  wrapEl.appendChild(f);
+  setTimeout(() => f.remove(), 620);
+}
+
+function addToPen(emoji) {
+  const el = document.createElement('div');
+  el.className = 'pen-animal'; el.textContent = emoji;
+  document.getElementById('penAnimals').appendChild(el);
+}
+
+/* ---- game flow ---- */
+function startGame() {
+  showScreen('gameScreen');
+  document.getElementById('levelVal').textContent = `Lv${level}`;
+  score = 0; timeLeft = GAME_TIME; caughtAnimals = []; gameActive = true;
+  document.getElementById('penAnimals').innerHTML = '';
+  updateScore(); updateTimer();
+
+  clearInterval(spawnInterval); clearInterval(timerInterval);
+
+  // Two rAFs: first ensures screen visible, second ensures layout measured
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    buildScene();
+    const cfg = LEVEL_CONFIG[level];
+
+    spawnInterval = setInterval(() => {
+      if (!gameActive) return;
+      const activeCount = holes.filter(h => h.active).length;
+      if (activeCount < cfg.maxActive) {
+        const avail = holes.map((h,i) => h.active ? -1 : i).filter(i => i >= 0);
+        if (avail.length) showCreature(avail[Math.floor(Math.random() * avail.length)]);
+      }
+    }, cfg.interval);
+
+    timerInterval = setInterval(() => {
+      timeLeft--; updateTimer();
+      if (timeLeft <= 0) endGame();
+    }, 1000);
+  }));
+}
+
+function updateScore() { document.getElementById('scoreVal').textContent = score; }
+function updateTimer() {
+  document.getElementById('timerVal').textContent = timeLeft;
+  if (timeLeft <= 8) document.getElementById('timerDisplay').classList.add('urgent');
+  else document.getElementById('timerDisplay').classList.remove('urgent');
+}
+
+function endGame() {
+  gameActive = false;
+  clearInterval(timerInterval); clearInterval(spawnInterval);
+  holes.forEach(h => clearTimeout(h.timer));
+  setTimeout(showResult, 350);
+}
+
+function showResult() {
+  showScreen('resultScreen');
+  const count = caughtAnimals.length;
+  document.getElementById('resultCount').textContent = count;
+  document.getElementById('resultScore').textContent = score;
+  document.getElementById('caughtPreview').textContent = caughtAnimals.join(' ');
+
+  let emoji, title, praise;
+  if      (count === 0) { emoji='😢'; title='ざんねん！';    praise='もう一度チャレンジしてみよう！\nきっとうまくいくよ！'; }
+  else if (count <= 3)  { emoji='😊'; title='がんばったね！'; praise=`${count}ひきつかまえたね！\nよくできました！`; }
+  else if (count <= 7)  { emoji='🎉'; title='やったね！';     praise=`${count}ひきも！\nどうぶつたちもよろこんでるよ！`; }
+  else if (count <= 12) { emoji='🌟'; title='すごい！';       praise=`なんと${count}ひき！！\nとっても上手だね！どうぶつ名人かも！`; }
+  else                  { emoji='🏆'; title='かんぺき！！';   praise=`信じられない！\n${count}ひきも！！\nきみは本当のどうぶつマスターだ！！`; }
+
+  document.getElementById('resultEmoji').textContent = emoji;
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultPraise').textContent = praise;
+}
+
+function retryGame() { startGame(); }
+function goHome()    { showScreen('startScreen'); }
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+selectLevel(1);
+</script>
+</body>
+</html>

@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>えいごであそぼ！</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+
+  :root {
+    --sky: #87CEEB;
+    --sun: #FFD700;
+    --grass: #7BC67E;
+    --cloud: #FFFFFF;
+    --bg: #FFF9F0;
+    --lv1: #FF6B6B;
+    --lv2: #845EC2;
+    --card-shadow: 0 8px 0 rgba(0,0,0,0.15);
+    --radius: 24px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  /* ===== HEADER ===== */
+  .header {
+    background: linear-gradient(180deg, #87CEEB 0%, #B0E2FF 100%);
+    padding: 16px 24px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .header-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(28px, 6vw, 48px);
+    color: #fff;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.25), 0 0 20px rgba(0,0,0,0.15);
+    letter-spacing: 2px;
+    position: relative;
+    z-index: 1;
+  }
+  .header-sub {
+    font-size: 14px;
+    color: rgba(255,255,255,0.9);
+    font-weight: 700;
+    margin-top: 4px;
+  }
+  .cloud {
+    position: absolute;
+    background: #fff;
+    border-radius: 50px;
+    opacity: 0.8;
+    animation: float 6s ease-in-out infinite;
+  }
+  .cloud::before, .cloud::after {
+    content: '';
+    position: absolute;
+    background: #fff;
+    border-radius: 50%;
+  }
+  .cloud1 { width: 80px; height: 28px; top: 16px; left: 8%; animation-delay: 0s; }
+  .cloud1::before { width: 40px; height: 40px; top: -18px; left: 10px; }
+  .cloud1::after { width: 28px; height: 28px; top: -10px; left: 34px; }
+  .cloud2 { width: 60px; height: 22px; top: 10px; right: 12%; animation-delay: -3s; }
+  .cloud2::before { width: 30px; height: 30px; top: -14px; left: 8px; }
+  .cloud2::after { width: 22px; height: 22px; top: -8px; left: 28px; }
+  .sun-deco {
+    position: absolute;
+    width: 50px; height: 50px;
+    background: #FFD700;
+    border-radius: 50%;
+    top: 8px; right: 8px;
+    box-shadow: 0 0 0 8px rgba(255,215,0,0.3), 0 0 0 16px rgba(255,215,0,0.1);
+    animation: spin 20s linear infinite;
+  }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+  /* ===== GRASS DIVIDER ===== */
+  .grass-divider {
+    height: 40px;
+    background: var(--grass);
+    position: relative;
+    margin-top: -20px;
+  }
+  .grass-divider::before {
+    content: '';
+    position: absolute;
+    top: -18px; left: 0; right: 0;
+    height: 30px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 30'%3E%3Cpath d='M0,30 Q50,0 100,30 Q150,0 200,30 Q250,0 300,30 Q350,0 400,30 Q450,0 500,30 Q550,0 600,30 Q650,0 700,30 Q750,0 800,30 Q850,0 900,30 Q950,0 1000,30 Q1050,0 1100,30 Q1150,0 1200,30 Z' fill='%237BC67E'/%3E%3C/svg%3E") repeat-x;
+    background-size: 200px 30px;
+  }
+
+  /* ===== SCREENS ===== */
+  .screen { display: none; padding: 24px 16px 40px; }
+  .screen.active { display: block; }
+
+  /* ===== LEVEL SCREEN ===== */
+  .level-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 500px;
+    margin: 20px auto 0;
+    padding: 0 4px;
+  }
+  .level-card {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: var(--card-shadow);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    border: 4px solid transparent;
+  }
+  .level-card:hover { transform: translateY(-4px); box-shadow: 0 12px 0 rgba(0,0,0,0.15); }
+  .level-card:active { transform: translateY(4px); box-shadow: 0 4px 0 rgba(0,0,0,0.15); }
+  .level-card.lv1 { border-color: var(--lv1); }
+  .level-card.lv2 { border-color: var(--lv2); }
+  .level-icon { font-size: 56px; margin-bottom: 12px; }
+  .level-badge {
+    display: inline-block;
+    font-family: 'Fredoka One', cursive;
+    font-size: 22px;
+    color: #fff;
+    padding: 4px 18px;
+    border-radius: 50px;
+    margin-bottom: 8px;
+  }
+  .lv1 .level-badge { background: var(--lv1); }
+  .lv2 .level-badge { background: var(--lv2); }
+  .lv3 .level-badge { background: #0077B6; }
+  .level-card.lv3 { border-color: #0077B6; }
+  .lv4 .level-badge { background: #D4A017; }
+  .level-card.lv4 { border-color: #D4A017; }
+  .level-name { font-size: 20px; font-weight: 800; color: #333; }
+  .level-age { font-size: 13px; color: #888; margin-top: 4px; font-weight: 600; }
+  .level-desc { font-size: 13px; color: #666; margin-top: 8px; line-height: 1.5; }
+  .screen-title {
+    text-align: center;
+    font-family: 'Fredoka One', cursive;
+    font-size: 26px;
+    color: #555;
+    margin-bottom: 4px;
+  }
+  .screen-sub { text-align: center; font-size: 13px; color: #999; font-weight: 600; }
+
+  /* ===== CATEGORY SCREEN ===== */
+  .cat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 16px;
+    max-width: 700px;
+    margin: 24px auto 0;
+  }
+  .cat-card {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 20px 12px;
+    text-align: center;
+    box-shadow: var(--card-shadow);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    border: 3px solid #eee;
+  }
+  .cat-card:hover { transform: translateY(-4px); box-shadow: 0 12px 0 rgba(0,0,0,0.12); }
+  .cat-card:active { transform: translateY(4px); box-shadow: 0 3px 0 rgba(0,0,0,0.12); }
+  .cat-emoji { font-size: 44px; margin-bottom: 10px; display: block; }
+  .cat-name { font-size: 16px; font-weight: 800; color: #333; }
+  .cat-count { font-size: 12px; color: #aaa; margin-top: 3px; font-weight: 600; }
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    border: 3px solid #ddd;
+    border-radius: 50px;
+    padding: 8px 20px;
+    font-size: 15px;
+    font-weight: 800;
+    color: #666;
+    cursor: pointer;
+    margin-bottom: 8px;
+    transition: all 0.15s;
+    font-family: 'Nunito', sans-serif;
+  }
+  .back-btn:hover { background: #f5f5f5; transform: translateX(-3px); }
+
+  /* ===== QUIZ SCREEN ===== */
+  .quiz-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 600px;
+    margin: 0 auto 20px;
+  }
+  .progress-bar-wrap {
+    flex: 1;
+    margin: 0 16px;
+    background: #e0e0e0;
+    border-radius: 50px;
+    height: 14px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #FFD700, #FF8C00);
+    border-radius: 50px;
+    transition: width 0.4s ease;
+  }
+  .q-counter {
+    font-size: 16px;
+    font-weight: 800;
+    color: #666;
+    white-space: nowrap;
+  }
+  .score-display {
+    font-family: 'Fredoka One', cursive;
+    font-size: 20px;
+    color: #FF6B6B;
+  }
+
+  .word-card {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 32px 20px 24px;
+    text-align: center;
+    box-shadow: var(--card-shadow);
+    max-width: 600px;
+    margin: 0 auto 28px;
+    position: relative;
+    border: 4px solid #FFD700;
+  }
+  .word-english {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(28px, 8vw, 64px);
+    color: #333;
+    letter-spacing: 2px;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.1s;
+    display: block;
+    width: 100%;
+    word-break: break-word;
+    text-align: center;
+    line-height: 1.2;
+  }
+  .word-english:active { transform: scale(0.95); }
+  .speak-hint {
+    font-size: 13px;
+    color: #aaa;
+    font-weight: 700;
+    margin-top: 4px;
+  }
+  .speak-btn {
+    margin-top: 12px;
+    background: linear-gradient(135deg, #FF8C00, #FFD700);
+    border: none;
+    border-radius: 50px;
+    padding: 10px 28px;
+    font-size: 20px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.15);
+    transition: all 0.1s;
+  }
+  .speak-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.1); }
+
+  .choices-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(6px, 2vw, 14px);
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 12px;
+    box-sizing: border-box;
+  }
+  .choice-btn {
+    background: #fff;
+    border: 4px solid #eee;
+    border-radius: var(--radius);
+    padding: 8px 4px;
+    font-size: clamp(24px, 6vw, 48px);
+    cursor: pointer;
+    box-shadow: var(--card-shadow);
+    transition: all 0.15s;
+    position: relative;
+    aspect-ratio: 1;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    box-sizing: border-box;
+  }
+  .choice-btn.text-only {
+    aspect-ratio: unset;
+    min-height: 80px;
+    font-size: clamp(14px, 4vw, 20px);
+  }
+  .choice-text-ja {
+    font-size: clamp(15px, 4vw, 22px);
+    font-weight: 800;
+    color: #444;
+    text-align: center;
+    word-break: break-word;
+    line-height: 1.3;
+  }
+  .choice-btn:active { transform: translateY(4px); box-shadow: 0 3px 0 rgba(0,0,0,0.1); }
+  .choice-label {
+    font-size: clamp(9px, 2.5vw, 13px);
+    font-weight: 800;
+    color: #888;
+    word-break: break-word;
+    text-align: center;
+    line-height: 1.2;
+    width: 100%;
+    padding: 0 2px;
+  }
+
+  .choice-btn.correct {
+    border-color: #4CAF50;
+    background: #F1FBF1;
+    animation: correctPop 0.4s ease;
+  }
+  .choice-btn.wrong {
+    border-color: #FF6B6B;
+    background: #FFF0F0;
+    animation: shake 0.4s ease forwards;
+    transform: scale(1) !important;
+  }
+  @keyframes correctPop {
+    0%{transform:scale(1)} 40%{transform:scale(1.1)} 100%{transform:scale(1)}
+  }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)}
+  }
+
+  /* BIG MARU */
+  .big-maru {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    font-size: 200px;
+    color: #FF0000;
+    text-shadow: 0 0 30px rgba(255,0,0,0.4);
+    pointer-events: none;
+    z-index: 999;
+    animation: none;
+    opacity: 0;
+  }
+  .big-maru.show {
+    animation: maruPop 0.9s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+  @keyframes maruPop {
+    0%{transform:translate(-50%,-50%) scale(0); opacity:1}
+    50%{transform:translate(-50%,-50%) scale(1.2); opacity:1}
+    70%{transform:translate(-50%,-50%) scale(1); opacity:1}
+    100%{transform:translate(-50%,-50%) scale(1); opacity:0}
+  }
+
+  /* RESULT SCREEN */
+  .result-card {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 40px 24px;
+    text-align: center;
+    box-shadow: var(--card-shadow);
+    max-width: 500px;
+    margin: 0 auto;
+    border: 4px solid #FFD700;
+  }
+  .result-emoji { font-size: 80px; margin-bottom: 16px; }
+  .result-score {
+    font-family: 'Fredoka One', cursive;
+    font-size: 52px;
+    color: #FF6B6B;
+  }
+  .result-msg { font-size: 20px; font-weight: 800; color: #555; margin: 8px 0 24px; }
+  .btn {
+    background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    padding: 14px 36px;
+    font-size: 18px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.15);
+    transition: all 0.15s;
+    font-family: 'Nunito', sans-serif;
+    margin: 6px;
+  }
+  .btn:hover { transform: translateY(-3px); box-shadow: 0 9px 0 rgba(0,0,0,0.12); }
+  .btn:active { transform: translateY(3px); box-shadow: 0 3px 0 rgba(0,0,0,0.1); }
+  .btn.secondary {
+    background: linear-gradient(135deg, #845EC2, #B39CD0);
+  }
+  .btn.home-btn {
+    background: linear-gradient(135deg, #4CAF50, #8BC34A);
+  }
+  .stars { font-size: 36px; margin: 8px 0; letter-spacing: 8px; }
+
+  .cat-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff3;
+    border-radius: 50px;
+    padding: 6px 16px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #555;
+    margin-bottom: 16px;
+    border: 2px solid #eee;
+  }
+
+  /* Stars decoration */
+  .star-deco {
+    position: fixed;
+    pointer-events: none;
+    font-size: 24px;
+    animation: starFloat 1.5s ease-out forwards;
+    z-index: 1000;
+  }
+  @keyframes starFloat {
+    0%{opacity:1; transform:translateY(0) scale(0)} 
+    20%{transform:translateY(-20px) scale(1.2)}
+    100%{opacity:0; transform:translateY(-120px) scale(0.5)}
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="cloud cloud1"></div>
+  <div class="cloud cloud2"></div>
+  <div class="sun-deco"></div>
+  <div class="header-title">🌟 えいごであそぼ！ 🌟</div>
+  <div class="header-sub">楽しく英語を覚えよう！</div>
+</div>
+<div class="grass-divider"></div>
+
+<!-- LEVEL SELECT -->
+<div id="levelScreen" class="screen active">
+  <p class="screen-title" style="margin-top:24px">レベルをえらんでね！</p>
+  <p class="screen-sub">👇 じぶんにあったレベルをタップしよう</p>
+  <div class="level-grid">
+    <div class="level-card lv1" onclick="selectLevel(1)">
+      <div class="level-icon" style="font-size:48px;flex-shrink:0;">🌱</div>
+      <div>
+        <div class="level-badge">レベル 1</div>
+        <div class="level-name">はじめて</div>
+        <div class="level-age">3〜4さい</div>
+        <div class="level-desc">みじかくて かんたんな たんご からスタート！</div>
+      </div>
+    </div>
+    <div class="level-card lv2" onclick="selectLevel(2)">
+      <div class="level-icon" style="font-size:48px;flex-shrink:0;">🌳</div>
+      <div>
+        <div class="level-badge">レベル 2</div>
+        <div class="level-name">ちょっとむずかしい</div>
+        <div class="level-age">5〜6さい</div>
+        <div class="level-desc">すこし むずかしい たんごに ちょうせん！</div>
+      </div>
+    </div>
+    <div class="level-card lv3" onclick="selectLevel(3)">
+      <div class="level-icon" style="font-size:48px;flex-shrink:0;">🚀</div>
+      <div>
+        <div class="level-badge">レベル 3</div>
+        <div class="level-name">もっとむずかしい</div>
+        <div class="level-age">6さい〜</div>
+        <div class="level-desc">えがなくても わかるかな？ よく つかわれる たんごを おぼえよう！</div>
+      </div>
+    </div>
+    <div class="level-card lv4" onclick="selectLevel(4)">
+      <div class="level-icon" style="font-size:48px;flex-shrink:0;">🌠</div>
+      <div>
+        <div class="level-badge">レベル 4</div>
+        <div class="level-name">チャレンジ！</div>
+        <div class="level-age">7さい〜</div>
+        <div class="level-desc">からだ・いえのなか・たべもの・ことば など もっとたくさんの たんごに ちょうせん！</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CATEGORY SELECT -->
+<div id="catScreen" class="screen">
+  <button class="back-btn" onclick="goBack('levelScreen','catScreen')">◀ もどる</button>
+  <p class="screen-title">カテゴリをえらんでね！</p>
+  <p class="screen-sub" id="catScreenSub"></p>
+  <div class="cat-grid" id="catGrid"></div>
+</div>
+
+<!-- QUIZ -->
+<div id="quizScreen" class="screen">
+  <div class="quiz-header">
+    <button class="back-btn" style="margin:0;padding:8px 14px" onclick="goBack('catScreen','quizScreen')">◀</button>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+    <div class="q-counter" id="qCounter">1/10</div>
+    <div class="score-display" id="scoreDisplay">⭐ 0</div>
+  </div>
+  <div class="word-card">
+    <div class="word-english" id="wordEnglish" onclick="speak()">APPLE</div>
+    <div class="speak-hint">↑ タップして きいてみよう</div>
+    <button class="speak-btn" onclick="speak()">🔊</button>
+  </div>
+  <div class="choices-grid" id="choicesGrid"></div>
+</div>
+
+<!-- RESULT -->
+<div id="resultScreen" class="screen">
+  <div class="result-card">
+    <div class="result-emoji" id="resultEmoji">🎉</div>
+    <div class="stars" id="resultStars">⭐⭐⭐</div>
+    <div class="result-score" id="resultScore">10/10</div>
+    <div class="result-msg" id="resultMsg">すごい！まんてん！</div>
+    <button class="btn" onclick="retryQuiz()">🔄 もういちど</button>
+    <button class="btn secondary" onclick="goToCategories()">📚 ほかのカテゴリ</button>
+    <button class="btn home-btn" onclick="goHome()">🏠 さいしょにもどる</button>
+  </div>
+</div>
+
+<div class="big-maru" id="bigMaru">◯</div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const DATA = {
+  1: { // Level 1: 3-4歳
+    label: 'レベル1 🌱',
+    categories: [
+      {
+        id: 'fruits1', name: 'くだもの', emoji: '🍎',
+        words: [
+          { en:'apple', ja:'りんご', emoji:'🍎' },
+          { en:'banana', ja:'ばなな', emoji:'🍌' },
+          { en:'grape', ja:'ぶどう', emoji:'🍇' },
+          { en:'orange', ja:'おれんじ', emoji:'🍊' },
+          { en:'strawberry', ja:'いちご', emoji:'🍓' },
+          { en:'melon', ja:'めろん', emoji:'🍈' },
+          { en:'peach', ja:'もも', emoji:'🍑' },
+          { en:'lemon', ja:'れもん', emoji:'🍋' },
+          { en:'cherry', ja:'さくらんぼ', emoji:'🍒' },
+          { en:'pear', ja:'なし', emoji:'🍐' },
+        ]
+      },
+      {
+        id: 'animals1', name: 'どうぶつ', emoji: '🐶',
+        words: [
+          { en:'dog', ja:'いぬ', emoji:'🐶' },
+          { en:'cat', ja:'ねこ', emoji:'🐱' },
+          { en:'rabbit', ja:'うさぎ', emoji:'🐰' },
+          { en:'bear', ja:'くま', emoji:'🐻' },
+          { en:'pig', ja:'ぶた', emoji:'🐷' },
+          { en:'cow', ja:'うし', emoji:'🐮' },
+          { en:'horse', ja:'うま', emoji:'🐴' },
+          { en:'sheep', ja:'ひつじ', emoji:'🐑' },
+          { en:'duck', ja:'あひる', emoji:'🦆' },
+          { en:'frog', ja:'かえる', emoji:'🐸' },
+        ]
+      },
+      {
+        id: 'colors1', name: 'いろ', emoji: '🌈',
+        words: [
+          { en:'red', ja:'あか', emoji:'🔴' },
+          { en:'blue', ja:'あお', emoji:'🔵' },
+          { en:'yellow', ja:'きいろ', emoji:'🟡' },
+          { en:'green', ja:'みどり', emoji:'🟢' },
+          { en:'pink', ja:'ぴんく', emoji:'🩷' },
+          { en:'white', ja:'しろ', emoji:'⚪' },
+          { en:'black', ja:'くろ', emoji:'⚫' },
+          { en:'orange', ja:'おれんじ', emoji:'🟠' },
+          { en:'purple', ja:'むらさき', emoji:'🟣' },
+          { en:'brown', ja:'ちゃいろ', emoji:'🟤' },
+        ]
+      },
+      {
+        id: 'body1', name: 'からだ', emoji: '👁️',
+        words: [
+          { en:'eye', ja:'め', emoji:'👁️' },
+          { en:'nose', ja:'はな', emoji:'👃' },
+          { en:'mouth', ja:'くち', emoji:'👄' },
+          { en:'ear', ja:'みみ', emoji:'👂' },
+          { en:'hand', ja:'て', emoji:'✋' },
+          { en:'foot', ja:'あし', emoji:'🦶' },
+          { en:'head', ja:'あたま', emoji:'🗣️' },
+          { en:'hair', ja:'かみ', emoji:'💇' },
+          { en:'finger', ja:'ゆび', emoji:'☝️' },
+          { en:'tooth', ja:'は', emoji:'🦷' },
+        ]
+      },
+      {
+        id: 'food1', name: 'たべもの', emoji: '🍙',
+        words: [
+          { en:'rice', ja:'ごはん', emoji:'🍚' },
+          { en:'bread', ja:'ぱん', emoji:'🍞' },
+          { en:'egg', ja:'たまご', emoji:'🥚' },
+          { en:'milk', ja:'みるく', emoji:'🥛' },
+          { en:'cake', ja:'けーき', emoji:'🎂' },
+          { en:'candy', ja:'あめ', emoji:'🍬' },
+          { en:'cookie', ja:'くっきー', emoji:'🍪' },
+          { en:'juice', ja:'じゅーす', emoji:'🧃' },
+          { en:'water', ja:'みず', emoji:'💧' },
+          { en:'soup', ja:'すーぷ', emoji:'🥣' },
+        ]
+      },
+      {
+        id: 'nums1', name: 'かず', emoji: '🔢',
+        words: [
+          { en:'one', ja:'いち', emoji:'1️⃣' },
+          { en:'two', ja:'に', emoji:'2️⃣' },
+          { en:'three', ja:'さん', emoji:'3️⃣' },
+          { en:'four', ja:'し', emoji:'4️⃣' },
+          { en:'five', ja:'ご', emoji:'5️⃣' },
+          { en:'six', ja:'ろく', emoji:'6️⃣' },
+          { en:'seven', ja:'なな', emoji:'7️⃣' },
+          { en:'eight', ja:'はち', emoji:'8️⃣' },
+          { en:'nine', ja:'きゅう', emoji:'9️⃣' },
+          { en:'ten', ja:'じゅう', emoji:'🔟' },
+        ]
+      },
+    ]
+  },
+  3: { // Level 3: 6歳〜 絵なし
+    label: 'レベル3 🚀',
+    textOnly: true,
+    categories: [
+      {
+        id: 'days3', name: 'ようびと つき', emoji: '📅',
+        words: [
+          { en:'Monday', ja:'げつようび', emoji:'📅' },
+          { en:'Tuesday', ja:'かようび', emoji:'📅' },
+          { en:'Wednesday', ja:'すいようび', emoji:'📅' },
+          { en:'Thursday', ja:'もくようび', emoji:'📅' },
+          { en:'Friday', ja:'きんようび', emoji:'📅' },
+          { en:'Saturday', ja:'どようび', emoji:'📅' },
+          { en:'Sunday', ja:'にちようび', emoji:'📅' },
+          { en:'January', ja:'1がつ', emoji:'📅' },
+          { en:'February', ja:'2がつ', emoji:'📅' },
+          { en:'March', ja:'3がつ', emoji:'📅' },
+          { en:'April', ja:'4がつ', emoji:'📅' },
+          { en:'May', ja:'5がつ', emoji:'📅' },
+          { en:'June', ja:'6がつ', emoji:'📅' },
+          { en:'July', ja:'7がつ', emoji:'📅' },
+          { en:'August', ja:'8がつ', emoji:'📅' },
+          { en:'September', ja:'9がつ', emoji:'📅' },
+          { en:'October', ja:'10がつ', emoji:'📅' },
+          { en:'November', ja:'11がつ', emoji:'📅' },
+          { en:'December', ja:'12がつ', emoji:'📅' },
+        ]
+      },
+      {
+        id: 'seasons3', name: 'きせつと じかん', emoji: '🌸',
+        words: [
+          { en:'spring', ja:'はる', emoji:'🌸' },
+          { en:'summer', ja:'なつ', emoji:'☀️' },
+          { en:'autumn', ja:'あき', emoji:'🍂' },
+          { en:'winter', ja:'ふゆ', emoji:'❄️' },
+          { en:'morning', ja:'あさ', emoji:'🌅' },
+          { en:'afternoon', ja:'ひる', emoji:'🌞' },
+          { en:'evening', ja:'ゆうがた', emoji:'🌆' },
+          { en:'night', ja:'よる', emoji:'🌙' },
+          { en:'today', ja:'きょう', emoji:'📆' },
+          { en:'tomorrow', ja:'あした', emoji:'📆' },
+          { en:'yesterday', ja:'きのう', emoji:'📆' },
+          { en:'week', ja:'しゅう', emoji:'📆' },
+        ]
+      },
+      {
+        id: 'school3', name: 'がっこう', emoji: '🎒',
+        words: [
+          { en:'school', ja:'がっこう', emoji:'🏫' },
+          { en:'class', ja:'クラス', emoji:'🎒' },
+          { en:'teacher', ja:'せんせい', emoji:'🎒' },
+          { en:'student', ja:'せいと', emoji:'🎒' },
+          { en:'book', ja:'ほん', emoji:'📖' },
+          { en:'pencil', ja:'えんぴつ', emoji:'✏️' },
+          { en:'eraser', ja:'けしごむ', emoji:'🎒' },
+          { en:'desk', ja:'つくえ', emoji:'🎒' },
+          { en:'chair', ja:'いす', emoji:'🪑' },
+          { en:'blackboard', ja:'こくばん', emoji:'🖊️' },
+          { en:'notebook', ja:'ノート', emoji:'📓' },
+          { en:'bag', ja:'かばん', emoji:'🎒' },
+        ]
+      },
+      {
+        id: 'feelings3', name: 'きもち', emoji: '😊',
+        words: [
+          { en:'happy', ja:'うれしい', emoji:'😊' },
+          { en:'sad', ja:'かなしい', emoji:'😢' },
+          { en:'angry', ja:'おこっている', emoji:'😠' },
+          { en:'scared', ja:'こわい', emoji:'😨' },
+          { en:'surprised', ja:'おどろいた', emoji:'😲' },
+          { en:'tired', ja:'つかれた', emoji:'😴' },
+          { en:'hungry', ja:'おなかすいた', emoji:'🤤' },
+          { en:'thirsty', ja:'のどがかわいた', emoji:'😮' },
+          { en:'excited', ja:'わくわく', emoji:'🤩' },
+          { en:'bored', ja:'たいくつ', emoji:'😐' },
+          { en:'sick', ja:'びょうき', emoji:'🤒' },
+          { en:'fine', ja:'げんき', emoji:'💪' },
+        ]
+      },
+      {
+        id: 'sports3', name: 'スポーツ', emoji: '⚽',
+        words: [
+          { en:'soccer', ja:'サッカー', emoji:'⚽' },
+          { en:'baseball', ja:'やきゅう', emoji:'⚾' },
+          { en:'basketball', ja:'バスケットボール', emoji:'🏀' },
+          { en:'swimming', ja:'すいえい', emoji:'🏊' },
+          { en:'running', ja:'はしる', emoji:'🏃' },
+          { en:'tennis', ja:'テニス', emoji:'🎾' },
+          { en:'volleyball', ja:'バレーボール', emoji:'🏐' },
+          { en:'gymnastics', ja:'たいそう', emoji:'🤸' },
+          { en:'skiing', ja:'スキー', emoji:'⛷️' },
+          { en:'cycling', ja:'サイクリング', emoji:'🚴' },
+        ]
+      },
+      {
+        id: 'jobs3', name: 'しごと', emoji: '👨‍⚕️',
+        words: [
+          { en:'doctor', ja:'おいしゃさん', emoji:'👨‍⚕️' },
+          { en:'nurse', ja:'かんごし', emoji:'👩‍⚕️' },
+          { en:'police', ja:'けいさつ', emoji:'👮' },
+          { en:'firefighter', ja:'しょうぼうし', emoji:'🧑‍🚒' },
+          { en:'chef', ja:'コック', emoji:'👨‍🍳' },
+          { en:'farmer', ja:'のうか', emoji:'👨‍🌾' },
+          { en:'pilot', ja:'パイロット', emoji:'👨‍✈️' },
+          { en:'driver', ja:'うんてんしゅ', emoji:'🚗' },
+          { en:'singer', ja:'かしゅ', emoji:'🎤' },
+          { en:'artist', ja:'げいじゅつか', emoji:'🎨' },
+        ]
+      },
+      {
+        id: 'shapes3', name: 'かたちと すうじ', emoji: '🔷',
+        words: [
+          { en:'circle', ja:'まる', emoji:'⭕' },
+          { en:'triangle', ja:'さんかく', emoji:'🔺' },
+          { en:'square', ja:'しかく', emoji:'🟥' },
+          { en:'rectangle', ja:'ちょうほうけい', emoji:'▬' },
+          { en:'star', ja:'ほし', emoji:'⭐' },
+          { en:'heart', ja:'ハート', emoji:'❤️' },
+          { en:'diamond', ja:'ひし形', emoji:'🔷' },
+          { en:'hundred', ja:'ひゃく', emoji:'💯' },
+          { en:'thousand', ja:'せん', emoji:'🔢' },
+          { en:'half', ja:'はんぶん', emoji:'➗' },
+        ]
+      },
+      {
+        id: 'opposites3', name: 'はんたいことば', emoji: '↔️',
+        words: [
+          { en:'big', ja:'おおきい', emoji:'🔵' },
+          { en:'small', ja:'ちいさい', emoji:'🔹' },
+          { en:'long', ja:'ながい', emoji:'📏' },
+          { en:'short', ja:'みじかい', emoji:'📏' },
+          { en:'fast', ja:'はやい', emoji:'💨' },
+          { en:'slow', ja:'おそい', emoji:'🐢' },
+          { en:'hard', ja:'かたい', emoji:'🪨' },
+          { en:'soft', ja:'やわらかい', emoji:'☁️' },
+          { en:'clean', ja:'きれい', emoji:'✨' },
+          { en:'dirty', ja:'きたない', emoji:'💩' },
+          { en:'loud', ja:'うるさい', emoji:'📢' },
+          { en:'quiet', ja:'しずか', emoji:'🤫' },
+        ]
+      },
+    ]
+  },
+  2: {
+    label: 'レベル2 🌳',
+    categories: [
+      {
+        id: 'veg2', name: 'やさい', emoji: '🥕',
+        words: [
+          { en:'carrot', ja:'にんじん', emoji:'🥕' },
+          { en:'tomato', ja:'とまと', emoji:'🍅' },
+          { en:'potato', ja:'じゃがいも', emoji:'🥔' },
+          { en:'onion', ja:'たまねぎ', emoji:'🧅' },
+          { en:'broccoli', ja:'ぶろっこりー', emoji:'🥦' },
+          { en:'corn', ja:'とうもろこし', emoji:'🌽' },
+          { en:'eggplant', ja:'なす', emoji:'🍆' },
+          { en:'pumpkin', ja:'かぼちゃ', emoji:'🎃' },
+          { en:'spinach', ja:'ほうれんそう', emoji:'🥬' },
+          { en:'mushroom', ja:'きのこ', emoji:'🍄' },
+        ]
+      },
+      {
+        id: 'seaanimals2', name: 'うみのいきもの', emoji: '🐠',
+        words: [
+          { en:'fish', ja:'さかな', emoji:'🐟' },
+          { en:'whale', ja:'くじら', emoji:'🐳' },
+          { en:'dolphin', ja:'いるか', emoji:'🐬' },
+          { en:'octopus', ja:'たこ', emoji:'🐙' },
+          { en:'crab', ja:'かに', emoji:'🦀' },
+          { en:'shrimp', ja:'えび', emoji:'🦐' },
+          { en:'shark', ja:'さめ', emoji:'🦈' },
+          { en:'jellyfish', ja:'くらげ', emoji:'🪼' },
+          { en:'penguin', ja:'ぺんぎん', emoji:'🐧' },
+          { en:'turtle', ja:'かめ', emoji:'🐢' },
+        ]
+      },
+      {
+        id: 'insects2', name: 'むし', emoji: '🐛',
+        words: [
+          { en:'butterfly', ja:'ちょうちょ', emoji:'🦋' },
+          { en:'bee', ja:'はち', emoji:'🐝' },
+          { en:'ant', ja:'あり', emoji:'🐜' },
+          { en:'ladybug', ja:'てんとうむし', emoji:'🐞' },
+          { en:'caterpillar', ja:'けむし', emoji:'🐛' },
+          { en:'grasshopper', ja:'ばった', emoji:'🦗' },
+          { en:'snail', ja:'かたつむり', emoji:'🐌' },
+          { en:'mosquito', ja:'か', emoji:'🦟' },
+          { en:'spider', ja:'くも', emoji:'🕷️' },
+          { en:'firefly', ja:'ほたる', emoji:'✨' },
+        ]
+      },
+      {
+        id: 'transport2', name: 'のりもの', emoji: '🚗',
+        words: [
+          { en:'car', ja:'くるま', emoji:'🚗' },
+          { en:'bus', ja:'ばす', emoji:'🚌' },
+          { en:'train', ja:'でんしゃ', emoji:'🚃' },
+          { en:'airplane', ja:'ひこうき', emoji:'✈️' },
+          { en:'ship', ja:'ふね', emoji:'🚢' },
+          { en:'bicycle', ja:'じてんしゃ', emoji:'🚲' },
+          { en:'rocket', ja:'ろけっと', emoji:'🚀' },
+          { en:'ambulance', ja:'きゅうきゅうしゃ', emoji:'🚑' },
+          { en:'helicopter', ja:'へりこぷたー', emoji:'🚁' },
+          { en:'truck', ja:'とらっく', emoji:'🚚' },
+        ]
+      },
+      {
+        id: 'weather2', name: 'てんき', emoji: '☀️',
+        words: [
+          { en:'sunny', ja:'はれ', emoji:'☀️' },
+          { en:'cloudy', ja:'くもり', emoji:'☁️' },
+          { en:'rainy', ja:'あめ', emoji:'🌧️' },
+          { en:'snowy', ja:'ゆき', emoji:'❄️' },
+          { en:'windy', ja:'かぜ', emoji:'🌬️' },
+          { en:'rainbow', ja:'にじ', emoji:'🌈' },
+          { en:'thunder', ja:'かみなり', emoji:'⛈️' },
+          { en:'storm', ja:'あらし', emoji:'🌀' },
+          { en:'fog', ja:'きり', emoji:'🌫️' },
+          { en:'hot', ja:'あつい', emoji:'🔥' },
+        ]
+      },
+      {
+        id: 'nature2', name: 'しぜん', emoji: '🌸',
+        words: [
+          { en:'flower', ja:'はな', emoji:'🌸' },
+          { en:'tree', ja:'き', emoji:'🌳' },
+          { en:'mountain', ja:'やま', emoji:'⛰️' },
+          { en:'river', ja:'かわ', emoji:'🌊' },
+          { en:'moon', ja:'つき', emoji:'🌙' },
+          { en:'star', ja:'ほし', emoji:'⭐' },
+          { en:'sun', ja:'たいよう', emoji:'☀️' },
+          { en:'cloud', ja:'くも', emoji:'☁️' },
+          { en:'rock', ja:'いわ', emoji:'🪨' },
+          { en:'leaf', ja:'は', emoji:'🍃' },
+        ]
+      },
+    ]
+  },
+  4: { // Level 4: 7歳〜 チャレンジ
+    label: 'レベル4 🌠',
+    textOnly: true,
+    categories: [
+      {
+        id: 'body4', name: 'からだのぶぶん', emoji: '🦴',
+        words: [
+          { en:'shoulder', ja:'かた', emoji:'💪' },
+          { en:'knee', ja:'ひざ', emoji:'🦵' },
+          { en:'elbow', ja:'ひじ', emoji:'💪' },
+          { en:'chest', ja:'むね', emoji:'👕' },
+          { en:'stomach', ja:'おなか', emoji:'👕' },
+          { en:'back', ja:'せなか', emoji:'👕' },
+          { en:'neck', ja:'くび', emoji:'👕' },
+          { en:'thumb', ja:'おやゆび', emoji:'👍' },
+          { en:'wrist', ja:'てくび', emoji:'⌚' },
+          { en:'ankle', ja:'あしくび', emoji:'🦶' },
+          { en:'tongue', ja:'した', emoji:'👅' },
+          { en:'cheek', ja:'ほほ', emoji:'😊' },
+        ]
+      },
+      {
+        id: 'house4', name: 'いえのなか', emoji: '🏠',
+        words: [
+          { en:'kitchen', ja:'だいどころ', emoji:'🍳' },
+          { en:'bedroom', ja:'しんしつ', emoji:'🛏️' },
+          { en:'bathroom', ja:'おふろ', emoji:'🛁' },
+          { en:'living room', ja:'リビング', emoji:'🛋️' },
+          { en:'window', ja:'まど', emoji:'🪟' },
+          { en:'door', ja:'ドア', emoji:'🚪' },
+          { en:'floor', ja:'ゆか', emoji:'🏠' },
+          { en:'ceiling', ja:'てんじょう', emoji:'🏠' },
+          { en:'wall', ja:'かべ', emoji:'🧱' },
+          { en:'stairs', ja:'かいだん', emoji:'🪜' },
+          { en:'garden', ja:'にわ', emoji:'🌳' },
+          { en:'roof', ja:'やね', emoji:'🏠' },
+        ]
+      },
+      {
+        id: 'food4', name: 'りょうりと しょくざい', emoji: '🍜',
+        words: [
+          { en:'noodle', ja:'めん', emoji:'🍜' },
+          { en:'pizza', ja:'ピザ', emoji:'🍕' },
+          { en:'hamburger', ja:'ハンバーガー', emoji:'🍔' },
+          { en:'salad', ja:'サラダ', emoji:'🥗' },
+          { en:'sandwich', ja:'サンドイッチ', emoji:'🥪' },
+          { en:'butter', ja:'バター', emoji:'🧈' },
+          { en:'cheese', ja:'チーズ', emoji:'🧀' },
+          { en:'chocolate', ja:'チョコレート', emoji:'🍫' },
+          { en:'ice cream', ja:'アイスクリーム', emoji:'🍦' },
+          { en:'sausage', ja:'ソーセージ', emoji:'🌭' },
+          { en:'popcorn', ja:'ポップコーン', emoji:'🍿' },
+          { en:'yogurt', ja:'ヨーグルト', emoji:'🥛' },
+        ]
+      },
+      {
+        id: 'adjectives4', name: 'ようすをあらわすことば', emoji: '✨',
+        words: [
+          { en:'beautiful', ja:'うつくしい', emoji:'✨' },
+          { en:'delicious', ja:'おいしい', emoji:'😋' },
+          { en:'kind', ja:'やさしい', emoji:'🤝' },
+          { en:'clever', ja:'かしこい', emoji:'🧠' },
+          { en:'brave', ja:'ゆうかん', emoji:'💪' },
+          { en:'funny', ja:'おもしろい', emoji:'😄' },
+          { en:'gentle', ja:'おだやか', emoji:'🕊️' },
+          { en:'busy', ja:'いそがしい', emoji:'⏰' },
+          { en:'early', ja:'はやい（じかん）', emoji:'🌅' },
+          { en:'late', ja:'おそい（じかん）', emoji:'🌙' },
+          { en:'young', ja:'わかい', emoji:'👶' },
+          { en:'old', ja:'としとった', emoji:'👴' },
+        ]
+      },
+      {
+        id: 'verbs4', name: 'うごきのことば', emoji: '🏃',
+        words: [
+          { en:'eat', ja:'たべる', emoji:'🍽️' },
+          { en:'drink', ja:'のむ', emoji:'🥤' },
+          { en:'sleep', ja:'ねる', emoji:'😴' },
+          { en:'walk', ja:'あるく', emoji:'🚶' },
+          { en:'run', ja:'はしる', emoji:'🏃' },
+          { en:'jump', ja:'とぶ', emoji:'🐇' },
+          { en:'swim', ja:'およぐ', emoji:'🏊' },
+          { en:'read', ja:'よむ', emoji:'📖' },
+          { en:'write', ja:'かく', emoji:'✏️' },
+          { en:'sing', ja:'うたう', emoji:'🎤' },
+          { en:'dance', ja:'おどる', emoji:'💃' },
+          { en:'play', ja:'あそぶ', emoji:'🎮' },
+          { en:'study', ja:'べんきょうする', emoji:'📚' },
+          { en:'cook', ja:'りょうりする', emoji:'🍳' },
+          { en:'draw', ja:'えをかく', emoji:'🎨' },
+        ]
+      },
+      {
+        id: 'places4', name: 'ばしょ', emoji: '🗺️',
+        words: [
+          { en:'park', ja:'こうえん', emoji:'🌳' },
+          { en:'hospital', ja:'びょういん', emoji:'🏥' },
+          { en:'supermarket', ja:'スーパー', emoji:'🛒' },
+          { en:'station', ja:'えき', emoji:'🚉' },
+          { en:'airport', ja:'くうこう', emoji:'✈️' },
+          { en:'library', ja:'としょかん', emoji:'📚' },
+          { en:'museum', ja:'はくぶつかん', emoji:'🏛️' },
+          { en:'zoo', ja:'どうぶつえん', emoji:'🦁' },
+          { en:'beach', ja:'うみべ', emoji:'🏖️' },
+          { en:'forest', ja:'もり', emoji:'🌲' },
+          { en:'restaurant', ja:'レストラン', emoji:'🍽️' },
+          { en:'hotel', ja:'ホテル', emoji:'🏨' },
+        ]
+      },
+      {
+        id: 'clothes4', name: 'ふくとみのまわり', emoji: '👗',
+        words: [
+          { en:'shirt', ja:'シャツ', emoji:'👕' },
+          { en:'pants', ja:'ズボン', emoji:'👖' },
+          { en:'dress', ja:'ドレス', emoji:'👗' },
+          { en:'jacket', ja:'ジャケット', emoji:'🧥' },
+          { en:'hat', ja:'ぼうし', emoji:'🎩' },
+          { en:'shoes', ja:'くつ', emoji:'👟' },
+          { en:'socks', ja:'くつした', emoji:'🧦' },
+          { en:'gloves', ja:'てぶくろ', emoji:'🧤' },
+          { en:'scarf', ja:'マフラー', emoji:'🧣' },
+          { en:'umbrella', ja:'かさ', emoji:'☂️' },
+          { en:'glasses', ja:'めがね', emoji:'👓' },
+          { en:'ring', ja:'ゆびわ', emoji:'💍' },
+        ]
+      },
+      {
+        id: 'greetings4', name: 'あいさつとひょうげん', emoji: '👋',
+        words: [
+          { en:'hello', ja:'こんにちは', emoji:'👋' },
+          { en:'goodbye', ja:'さようなら', emoji:'👋' },
+          { en:'thank you', ja:'ありがとう', emoji:'🙏' },
+          { en:'sorry', ja:'ごめんなさい', emoji:'🙇' },
+          { en:'please', ja:'おねがいします', emoji:'🙏' },
+          { en:'yes', ja:'はい', emoji:'✅' },
+          { en:'no', ja:'いいえ', emoji:'❌' },
+          { en:'good morning', ja:'おはよう', emoji:'🌅' },
+          { en:'good night', ja:'おやすみ', emoji:'🌙' },
+          { en:'help', ja:'たすけて', emoji:'🆘' },
+          { en:'welcome', ja:'ようこそ', emoji:'🎉' },
+          { en:'congratulations', ja:'おめでとう', emoji:'🎊' },
+        ]
+      },
+    ]
+  }
+};
+
+// ============================================================
+// STATE
+// ============================================================
+let currentLevel = 1;
+let currentCat = null;
+let questions = [];
+let qIndex = 0;
+let score = 0;
+
+
+// ============================================================
+// NAV
+// ============================================================
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function goBack(toScreen, fromScreen) {
+  show(toScreen);
+}
+function goHome() { show('levelScreen'); }
+function goToCategories() { show('catScreen'); }
+
+// ============================================================
+// LEVEL
+// ============================================================
+function selectLevel(lv) {
+  currentLevel = lv;
+  const data = DATA[lv];
+  document.getElementById('catScreenSub').textContent = `${data.label} — カテゴリをえらんでね！`;
+  renderCategories(data.categories);
+  show('catScreen');
+}
+
+function renderCategories(cats) {
+  const grid = document.getElementById('catGrid');
+  grid.innerHTML = '';
+  cats.forEach(cat => {
+    const d = document.createElement('div');
+    d.className = 'cat-card';
+    d.innerHTML = `<span class="cat-emoji">${cat.emoji}</span><div class="cat-name">${cat.name}</div><div class="cat-count">${cat.words.length}もん</div>`;
+    d.onclick = () => startQuiz(cat);
+    grid.appendChild(d);
+  });
+}
+
+// ============================================================
+// QUIZ
+// ============================================================
+function startQuiz(cat) {
+  currentCat = cat;
+  const isTextOnly = DATA[currentLevel].textOnly;
+  questions = shuffle([...cat.words]);
+  if (!isTextOnly) questions = questions.slice(0, 10);
+  qIndex = 0;
+  score = 0;
+  show('quizScreen');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  if (qIndex >= questions.length) { showResult(); return; }
+  const q = questions[qIndex];
+
+  document.getElementById('wordEnglish').textContent = q.en.toUpperCase();
+  document.getElementById('qCounter').textContent = `${qIndex+1}/${questions.length}`;
+  document.getElementById('scoreDisplay').textContent = `⭐ ${score}`;
+  document.getElementById('progressBar').style.width = `${(qIndex/questions.length)*100}%`;
+
+  // Build choices: correct + 2 random wrongs from same category pool
+  const isTextOnly = DATA[currentLevel].textOnly;
+  const pool = DATA[currentLevel].categories.find(c=>c.id===currentCat.id).words.filter(w=>w.en!==q.en);
+  const wrongs = shuffle(pool).slice(0,2);
+  const choices = shuffle([q, ...wrongs]);
+
+  const grid = document.getElementById('choicesGrid');
+  grid.innerHTML = '';
+  choices.forEach(ch => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn' + (isTextOnly ? ' text-only' : '');
+    if (isTextOnly) {
+      btn.innerHTML = `<span class="choice-text-ja">${ch.ja}</span>`;
+    } else {
+      btn.innerHTML = `<span>${ch.emoji}</span><span class="choice-label">${ch.ja}</span>`;
+    }
+    btn.onclick = () => answer(btn, ch.en === q.en, grid);
+    grid.appendChild(btn);
+  });
+
+  // Auto-speak after short delay
+  setTimeout(() => speakWord(q.en), 400);
+}
+
+function answer(btn, correct, grid) {
+  if (correct) {
+    btn.classList.add('correct');
+    score++;
+    // Disable all buttons so you can't click again during animation
+    grid.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+    showMaru();
+    spawnStars(btn);
+    setTimeout(() => { qIndex++; renderQuestion(); }, 1200);
+  } else {
+    // Just highlight the wrong button briefly, keep all clickable
+    btn.classList.add('wrong', 'no-hover');
+    setTimeout(() => {
+      btn.classList.remove('wrong');
+      btn.style.transform = 'scale(1)';
+      requestAnimationFrame(() => {
+        btn.style.transform = '';
+        btn.classList.remove('no-hover');
+      });
+    }, 450);
+  }
+}
+
+function showMaru() {
+  const m = document.getElementById('bigMaru');
+  m.classList.remove('show');
+  void m.offsetWidth;
+  m.classList.add('show');
+}
+
+function spawnStars(el) {
+  const rect = el.getBoundingClientRect();
+  const cx = rect.left + rect.width/2;
+  const cy = rect.top + rect.height/2;
+  ['⭐','✨','🌟'].forEach((s,i) => {
+    const d = document.createElement('div');
+    d.className = 'star-deco';
+    d.textContent = s;
+    d.style.left = (cx + (i-1)*40) + 'px';
+    d.style.top = cy + 'px';
+    d.style.animationDelay = (i*0.1)+'s';
+    document.body.appendChild(d);
+    setTimeout(()=>d.remove(), 1600);
+  });
+}
+
+// ============================================================
+// RESULT
+// ============================================================
+function showResult() {
+  show('resultScreen');
+  const total = questions.length;
+  const pct = score/total;
+  let emoji, msg, stars;
+  if (pct === 1) { emoji='🏆'; msg='すごい！まんてん！パーフェクト！'; stars='⭐⭐⭐'; }
+  else if (pct >= 0.7) { emoji='🎉'; msg='よくできました！すばらしい！'; stars='⭐⭐'; }
+  else if (pct >= 0.5) { emoji='😊'; msg='がんばったね！またちょうせんしてみよう！'; stars='⭐'; }
+  else { emoji='💪'; msg='もういちどれんしゅうしてみよう！'; stars=''; }
+  document.getElementById('resultEmoji').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${score} / ${total}`;
+  document.getElementById('resultMsg').textContent = msg;
+  document.getElementById('resultStars').textContent = stars;
+  document.getElementById('progressBar').style.width = '100%';
+}
+
+function retryQuiz() { startQuiz(currentCat); }
+
+// ============================================================
+// SPEECH
+// ============================================================
+function speak() {
+  if (qIndex < questions.length) speakWord(questions[qIndex].en);
+}
+function speakWord(word) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(word);
+  u.lang = 'en-US';
+  u.rate = 0.85;
+  u.pitch = 1.1;
+  window.speechSynthesis.speak(u);
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i=a.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+</script>
+</body>
+</html>
