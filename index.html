@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>気ままママの こどものための遊び＆学び</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=Nunito:wght@700;900&display=swap" rel="stylesheet" />
+  <style>
+    :root { --shadow: rgba(0,0,0,0.12); }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Kosugi Maru', sans-serif;
+      background: linear-gradient(180deg, #b3e5fc 0%, #e0f4ff 40%, #c8e6c9 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+      color: #3a3a3a;
+    }
+
+    .sky-layer {
+      position: fixed;
+      top: 0; left: 0; right: 0; height: 100vh;
+      pointer-events: none; z-index: 0; overflow: hidden;
+    }
+    .sun {
+      position: absolute; top: 24px; right: 60px;
+      width: 80px; height: 80px;
+      background: #ffd54f; border-radius: 50%;
+      box-shadow: 0 0 0 12px rgba(255,213,79,0.25), 0 0 0 24px rgba(255,213,79,0.1);
+      animation: sunPulse 4s ease-in-out infinite;
+    }
+    @keyframes sunPulse {
+      0%,100% { box-shadow: 0 0 0 12px rgba(255,213,79,0.25), 0 0 0 24px rgba(255,213,79,0.1); }
+      50%      { box-shadow: 0 0 0 18px rgba(255,213,79,0.3),  0 0 0 36px rgba(255,213,79,0.12); }
+    }
+    .cloud {
+      position: absolute; background: white; border-radius: 50px;
+      opacity: 0.9; animation: floatCloud linear infinite;
+    }
+    .cloud::before, .cloud::after { content:''; position:absolute; background:white; border-radius:50%; }
+    .cloud-1 { width:120px; height:40px; top:60px;  left:-140px; animation-duration:28s; animation-delay:-8s;  }
+    .cloud-1::before { width:60px; height:55px; top:-28px; left:18px; }
+    .cloud-1::after  { width:45px; height:42px; top:-20px; left:52px; }
+    .cloud-2 { width:90px;  height:30px; top:130px; left:-110px; animation-duration:22s; animation-delay:-3s;  opacity:.75; }
+    .cloud-2::before { width:44px; height:40px; top:-22px; left:14px; }
+    .cloud-2::after  { width:34px; height:32px; top:-15px; left:40px; }
+    .cloud-3 { width:140px; height:45px; top:30px;  left:-160px; animation-duration:35s; animation-delay:-18s; }
+    .cloud-3::before { width:70px; height:62px; top:-32px; left:22px; }
+    .cloud-3::after  { width:52px; height:48px; top:-24px; left:66px; }
+    @keyframes floatCloud {
+      from { transform: translateX(0); }
+      to   { transform: translateX(calc(100vw + 200px)); }
+    }
+
+    .stars-container { position:fixed; top:0; left:0; right:0; bottom:0; pointer-events:none; z-index:0; }
+    .star { position:absolute; animation:starFloat 3s ease-in-out infinite; opacity:.7; }
+    @keyframes starFloat {
+      0%,100% { transform: translateY(0) rotate(0deg); }
+      50%      { transform: translateY(-10px) rotate(20deg); }
+    }
+
+    .wrapper { position:relative; z-index:1; max-width:720px; margin:0 auto; padding:40px 20px 80px; }
+
+    header { text-align:center; margin-bottom:36px; }
+    .mama-icon { font-size:3.5rem; display:block; margin-bottom:4px; animation:bounce 2.2s ease-in-out infinite; }
+    @keyframes bounce {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-10px); }
+    }
+    h1 {
+      font-family:'Nunito','Kosugi Maru',sans-serif; font-weight:900;
+      font-size:clamp(1.5rem,5vw,2.2rem); line-height:1.4; color:#1565c0;
+      text-shadow:3px 3px 0 rgba(255,255,255,0.8), 0 0 20px rgba(100,181,246,0.5);
+    }
+    h1 .accent { color:#e91e63; display:inline-block; animation:colorShift 4s ease-in-out infinite alternate; }
+    @keyframes colorShift {
+      from { color:#e91e63; }
+      to   { color:#ff6f00; }
+    }
+    .subtitle {
+      margin-top:16px; font-size:.95rem; color:#555;
+      background:rgba(255,255,255,0.7); border-radius:16px;
+      padding:12px 20px; line-height:1.8;
+      backdrop-filter:blur(4px); box-shadow:0 2px 8px var(--shadow);
+    }
+
+    .cards { display:flex; flex-direction:column; gap:16px; }
+
+    .card {
+      background:white; border-radius:20px; padding:20px 24px;
+      box-shadow:0 4px 16px var(--shadow), 0 2px 6px rgba(0,0,0,0.06);
+      border-left:5px solid transparent;
+    }
+    .card-1 { border-left-color:#ef9a9a; }
+    .card-2 { border-left-color:#64b5f6; }
+    .card-3 { border-left-color:#81c784; }
+    .card-4 { border-left-color:#ce93d8; }
+
+    .card-title { font-family:'Nunito','Kosugi Maru',sans-serif; font-weight:900; font-size:1.1rem; color:#1a237e; margin-bottom:6px; line-height:1.4; }
+    .card-desc  { font-size:.82rem; color:#777; line-height:1.5; margin-bottom:6px; }
+
+    .card-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+
+    .btn-web {
+      display:inline-flex; align-items:center; gap:5px;
+      background:linear-gradient(135deg,#e8f5e9,#c8e6c9);
+      color:#2e7d32; font-family:'Kosugi Maru',sans-serif;
+      font-size:.78rem; font-weight:bold;
+      border:2px solid #a5d6a7; border-radius:20px;
+      padding:7px 16px; text-decoration:none;
+      transition:background .2s, transform .15s;
+    }
+    .btn-web:hover { background:linear-gradient(135deg,#c8e6c9,#a5d6a7); transform:scale(1.04); }
+
+    .btn-dl {
+      display:inline-flex; align-items:center; gap:5px;
+      background:linear-gradient(135deg,#e3f2fd,#bbdefb);
+      color:#1565c0; font-family:'Kosugi Maru',sans-serif;
+      font-size:.78rem; font-weight:bold;
+      border:2px solid #90caf9; border-radius:20px;
+      padding:7px 16px; text-decoration:none;
+      transition:background .2s, transform .15s;
+    }
+    .btn-dl:hover { background:linear-gradient(135deg,#bbdefb,#90caf9); transform:scale(1.04); }
+
+    footer { text-align:center; margin-top:48px; font-size:.75rem; color:rgba(0,0,0,0.35); }
+
+    @media (max-width:480px) {
+      .card { padding:16px 18px; }
+      .card-actions { flex-direction:column; }
+      .btn-web, .btn-dl { justify-content:center; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="sky-layer">
+  <div class="sun"></div>
+  <div class="cloud cloud-1"></div>
+  <div class="cloud cloud-2"></div>
+  <div class="cloud cloud-3"></div>
+</div>
+<div class="stars-container" id="starsContainer"></div>
+
+<div class="wrapper">
+  <header>
+    <span class="mama-icon">🌸</span>
+    <h1>気ままママの<br>こどものための<br>遊び＆学び</h1>
+    <p class="subtitle">
+      こどもたちが楽しむためにいろんなツールを用意しました。<br>
+      テストバージョンですがぜひ親子でお楽しみください。<br>
+      <span style="color:#999;font-size:.85em;">（完璧な品質を追い求めていないので不備がある可能性があることご了承ください💦）</span>
+    </p>
+  </header>
+
+  <div class="cards">
+
+    <div class="card card-1">
+      <div class="card-title">動物たちをつかまえよう</div>
+      <div class="card-actions">
+        <a class="btn-web" href="https://kimamamama.github.io/animal/" target="_blank" rel="noopener">🌐 WEBで遊ぶ</a>
+        <a class="btn-dl" href="https://kimamamama.github.io/menu/animal-game.html" download>📥 ダウンロード</a>
+      </div>
+    </div>
+
+    <div class="card card-2">
+      <div class="card-title">アルファベットを覚えよう</div>
+      <div class="card-actions">
+        <a class="btn-web" href="https://kimamamama.github.io/alphabet-learning/" target="_blank" rel="noopener">🌐 WEBで遊ぶ</a>
+        <a class="btn-dl" href="https://kimamamama.github.io/menu/alphabet-learning.html" download>📥 ダウンロード</a>
+      </div>
+    </div>
+
+    <div class="card card-3">
+      <div class="card-title">簡単な英単語を学ぼう</div>
+      <div class="card-actions">
+        <a class="btn-web" href="https://kimamamama.github.io/kids-english/" target="_blank" rel="noopener">🌐 WEBで遊ぶ</a>
+        <a class="btn-dl" href="https://kimamamama.github.io/menu/kids-english-game.html" download>📥 ダウンロード</a>
+      </div>
+    </div>
+
+    <div class="card card-4">
+      <div class="card-title">時計の分の位置を覚えよう</div>
+      <div class="card-desc">ルーレット付き（最初にルーレットの一枠をテキストで自由に入れられます）</div>
+      <div class="card-actions">
+        <a class="btn-web" href="https://kimamamama.github.io/clock-min-quiz/" target="_blank" rel="noopener">🌐 WEBで遊ぶ</a>
+        <a class="btn-dl" href="https://kimamamama.github.io/menu/clock-min-quiz.html" download>📥 ダウンロード</a>
+      </div>
+    </div>
+
+    <div class="card card-1">
+      <div class="card-title">数をかぞえてみよう</div>
+      <div class="card-actions">
+        <a class="btn-web" href="https://kimamamama.github.io/counting/" target="_blank" rel="noopener">🌐 WEBで遊ぶ</a>
+        <a class="btn-dl" href="https://kimamamama.github.io/menu/counting-game.html" download>📥 ダウンロード</a>
+      </div>
+    </div>
+
+    <div class="card card-2">
+      <div class="card-title">足し算に挑戦してみよう</div>
+      <div class="card-actions">
+        <a class="btn-web" href="https://kimamamama.github.io/addition-quiz/" target="_blank" rel="noopener">🌐 WEBで遊ぶ</a>
+        <a class="btn-dl" href="https://kimamamama.github.io/menu/addition-quiz.html" download>📥 ダウンロード</a>
+      </div>
+    </div>
+
+    <div class="card card-3">
+      <div class="card-title">演奏してみよう</div>
+      <div class="card-actions">
+        <a class="btn-web" href="https://kimamamama.github.io/music-game/" target="_blank" rel="noopener">🌐 WEBで遊ぶ</a>
+        <a class="btn-dl" href="https://kimamamama.github.io/menu/music-game.html" download>📥 ダウンロード</a>
+      </div>
+    </div>
+
+    <div class="card card-4">
+      <div class="card-title">ひらがなを覚えよう</div>
+      <div class="card-actions">
+        <a class="btn-web" href="https://kimamamama.github.io/hiragana/" target="_blank" rel="noopener">🌐 WEBで遊ぶ</a>
+        <a class="btn-dl" href="https://kimamamama.github.io/menu/hiragana.html" download>📥 ダウンロード</a>
+      </div>
+    </div>
+
+    <div class="card card-1">
+      <div class="card-title">数字をおいかけよう</div>
+      <div class="card-desc">どんどん出てくる数字を順番にタップしてね</div>
+      <div class="card-actions">
+        <a class="btn-web" href="https://kimamamama.github.io/kazukazoe/" target="_blank" rel="noopener">🌐 WEBで遊ぶ</a>
+        <a class="btn-dl" href="https://kimamamama.github.io/menu/kazukazoe.html" download>📥 ダウンロード</a>
+      </div>
+    </div>
+    
+  </div>
+
+  <footer>
+    <p>© 気ままママ — こどものための遊び＆学び</p>
+  </footer>
+</div>
+
+<script>
+  // 星の装飾
+  const starEmojis = ['⭐','🌟','✨','💫'];
+  const container = document.getElementById('starsContainer');
+  for (let i = 0; i < 12; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.textContent = starEmojis[i % starEmojis.length];
+    s.style.left   = (Math.random() * 95) + '%';
+    s.style.top    = (Math.random() * 90) + '%';
+    s.style.fontSize = (0.8 + Math.random() * 1.2) + 'rem';
+    s.style.animationDelay    = (Math.random() * 3) + 's';
+    s.style.animationDuration = (2.5 + Math.random() * 2) + 's';
+    container.appendChild(s);
+  }
+</script>
+</body>
+</html>
