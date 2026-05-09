@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>かたちあてゲーム</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap');
+
+  :root {
+    --bg1: #E3F2FD; --bg2: #FFF8E1; --bg3: #F3E5F5;
+    --acc1: #2196F3; --acc2: #FF9800; --acc3: #9C27B0;
+    --correct: #4CAF50; --wrong: #F44336;
+    --card: #FFFFFF;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; touch-action: manipulation; }
+
+  body {
+    font-family: 'Kosugi Maru', sans-serif;
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    overflow-x: hidden;
+    transition: background 0.6s;
+    background: var(--bg1);
+    padding-bottom: 60px;
+  }
+
+  /* ===== ヘッダー ===== */
+  header {
+    width: 100%; max-width: 520px;
+    padding: 16px 20px 10px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: relative; z-index: 10;
+  }
+  .title { font-size: clamp(18px,5vw,24px); color: #333; letter-spacing: 1px; }
+  .score-wrap { display:flex; gap:8px; align-items:center; }
+  .score-badge {
+    background: #fff; border-radius: 30px; padding: 6px 14px;
+    font-size: 17px; font-weight: bold; color: #555;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+    display:flex; align-items:center; gap:5px;
+  }
+
+  /* ===== レベル選択タブ ===== */
+  .level-tabs {
+    display: flex; gap: 10px;
+    width: 100%; max-width: 520px; padding: 0 20px 10px;
+  }
+  .level-tab {
+    flex: 1; padding: 9px 4px; border: 2px solid transparent;
+    border-radius: 14px; font-family: 'Kosugi Maru', sans-serif;
+    font-size: 14px; cursor: pointer; background: #fff;
+    color: #888; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: all 0.2s;
+  }
+  .level-tab.active-lv1 { border-color: var(--acc1); color: var(--acc1); background: #E3F2FD; font-weight: bold; }
+  .level-tab.active-lv2 { border-color: var(--acc2); color: var(--acc2); background: #FFF3E0; font-weight: bold; }
+  .level-tab.active-lv3 { border-color: var(--acc3); color: var(--acc3); background: #F3E5F5; font-weight: bold; }
+
+  /* ===== メインカード ===== */
+  .game-area {
+    width: min(95vw, 520px);
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+  }
+
+  /* 進捗バー */
+  .progress-bar { width:100%; height:8px; background:rgba(0,0,0,0.08); border-radius:8px; overflow:hidden; }
+  .progress-fill { height:100%; border-radius:8px; transition:width 0.5s ease; }
+  .lv1 .progress-fill { background: linear-gradient(90deg,#64B5F6,#2196F3); }
+  .lv2 .progress-fill { background: linear-gradient(90deg,#FFB74D,#FF9800); }
+  .lv3 .progress-fill { background: linear-gradient(90deg,#CE93D8,#9C27B0); }
+
+  .question-card {
+    background: var(--card); border-radius: 28px;
+    box-shadow: 0 6px 28px rgba(0,0,0,0.1);
+    padding: 20px 20px 16px;
+    width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px;
+  }
+  .question-label { font-size: 14px; color: #aaa; letter-spacing: 1px; }
+  .level-badge {
+    font-size: 13px; padding: 3px 12px; border-radius: 20px; font-weight: bold;
+    display:inline-block;
+  }
+  .lv-badge-1 { background: #E3F2FD; color: var(--acc1); }
+  .lv-badge-2 { background: #FFF3E0; color: var(--acc2); }
+  .lv-badge-3 { background: #F3E5F5; color: var(--acc3); }
+
+  /* シルエット表示エリア */
+  .silhouette-wrap {
+    width: 160px; height: 160px;
+    border-radius: 22px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .lv1 .silhouette-wrap { background: #BBDEFB; }
+  .lv2 .silhouette-wrap { background: #FFE0B2; }
+  .lv3 .silhouette-wrap { background: #E1BEE7; }
+
+  .silhouette-wrap svg { width: 120px; height: 120px; }
+
+  /* 黒塗り用 */
+  .shadow-svg * { fill: #1a2535 !important; stroke: #1a2535 !important; }
+  /* カラー（正解後に表示） */
+  .color-svg { display: none; }
+  .revealed .shadow-svg { display: none; }
+  .revealed .color-svg { display: block; animation: popIn 0.5s ease; }
+
+  /* ===== 選択肢 ===== */
+  .choices {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%;
+  }
+  .choice-btn {
+    background: var(--card); border: 3px solid #eee;
+    border-radius: 18px; padding: 12px 8px; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+    font-family: 'Kosugi Maru', sans-serif;
+    transition: transform 0.14s, border-color 0.15s, background 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .choice-btn:active { transform: scale(0.92); }
+  .choice-btn svg { width: 70px; height: 70px; }
+  .choice-btn .label { font-size: 15px; color: #555; }
+
+  .choice-btn.correct { border-color: var(--correct); background: #F1FFF1; animation: popCorrect 0.5s ease forwards; }
+  .choice-btn.wrong   { border-color: var(--wrong);   background: #FFF2F2; animation: shakeWrong 0.4s ease; }
+  @keyframes popCorrect {
+    0%{transform:scale(1)} 40%{transform:scale(1.1)} 70%{transform:scale(0.97)} 100%{transform:scale(1.04)}
+  }
+  @keyframes shakeWrong {
+    0%,100%{transform:translateX(0)} 25%{transform:translateX(-7px)} 75%{transform:translateX(7px)}
+  }
+
+  /* ===== 結果・次へ ===== */
+  .result-msg { font-size: clamp(20px,5.5vw,28px); text-align:center; opacity:0; min-height:36px; }
+  .result-msg.show { animation: popIn 0.4s cubic-bezier(.36,1.6,.4,1) forwards; opacity:1; }
+  @keyframes popIn { from{opacity:0;transform:scale(0.5)} to{opacity:1;transform:scale(1)} }
+
+  .next-btn {
+    color:#fff; border:none; border-radius:50px;
+    padding:13px 38px; font-size:19px;
+    font-family:'Kosugi Maru',sans-serif; cursor:pointer;
+    box-shadow:0 5px 18px rgba(0,0,0,0.2);
+    display:none; transition:transform 0.14s;
+  }
+  .lv1 .next-btn { background: linear-gradient(135deg,#42A5F5,#1976D2); }
+  .lv2 .next-btn { background: linear-gradient(135deg,#FFA726,#E65100); }
+  .lv3 .next-btn { background: linear-gradient(135deg,#BA68C8,#6A1B9A); }
+  .next-btn:active { transform: scale(0.93); }
+  .next-btn.show { display: block; animation: popIn 0.4s ease; }
+
+  /* ===== 花吹雪 ===== */
+  .confetti-container { position:fixed;inset:0;pointer-events:none;z-index:100;overflow:hidden; }
+  .confetti-piece {
+    position:absolute; top:-20px; opacity:0;
+    animation: fall linear forwards;
+  }
+  @keyframes fall { 0%{opacity:1;transform:translateY(0) rotate(0)} 100%{opacity:0;transform:translateY(100vh) rotate(720deg)} }
+
+  /* ===== スター ===== */
+  .star-burst {
+    position:fixed; pointer-events:none; z-index:200; font-size:32px; opacity:0;
+    animation: starFly 0.9s cubic-bezier(.2,1,.4,1) forwards;
+  }
+  @keyframes starFly {
+    0%{opacity:1;transform:scale(0) translateY(0)} 60%{opacity:1;transform:scale(1.3) translateY(-70px)} 100%{opacity:0;transform:scale(1) translateY(-130px)}
+  }
+
+  /* ===== クリアスクリーン ===== */
+  .clear-screen {
+    position:fixed;inset:0;z-index:300;
+    background:linear-gradient(135deg,#E8F5E9,#F3E5F5);
+    display:none; flex-direction:column; align-items:center; justify-content:center; gap:18px;
+  }
+  .clear-screen.show { display:flex; animation:fadeIn 0.5s ease; }
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .clear-title { font-size:clamp(26px,8vw,48px); color:#FF6B9D; }
+  .clear-stars { font-size:42px; letter-spacing:8px; }
+  .clear-score { font-size:18px; color:#888; }
+  .restart-btn {
+    background:linear-gradient(135deg,#FF6B9D,#FF4D8D); color:#fff;
+    border:none; border-radius:50px; padding:14px 44px; font-size:20px;
+    font-family:'Kosugi Maru',sans-serif; cursor:pointer;
+    box-shadow:0 5px 18px rgba(255,80,140,0.4); transition:transform 0.14s;
+  }
+  .restart-btn:active{transform:scale(0.93);}
+
+  /* ===== ヒント：レベル3 説明 ===== */
+  .hint-text { font-size:13px; color:#999; text-align:center; }
+</style>
+</head>
+<body>
+
+<div class="confetti-container" id="confetti"></div>
+
+<header>
+  <div class="title">🔷 かたちあて</div>
+  <div class="score-wrap">
+    <div class="score-badge">⭐ <span id="score">0</span></div>
+  </div>
+</header>
+
+<!-- レベルタブ -->
+<div class="level-tabs">
+  <button class="level-tab active-lv1" id="tab1" onclick="switchLevel(1)">⭐ レベル1<br><small>きほんのかたち</small></button>
+  <button class="level-tab" id="tab2" onclick="switchLevel(2)">⭐⭐ レベル2<br><small>くみあわせ</small></button>
+  <button class="level-tab" id="tab3" onclick="switchLevel(3)">⭐⭐⭐ レベル3<br><small>むきをあてよう</small></button>
+</div>
+
+<div class="game-area lv1" id="gameArea">
+  <div class="progress-bar" id="progressBar">
+    <div class="progress-fill" id="progress" style="width:0%"></div>
+  </div>
+
+  <div class="question-card">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="question-label">これは　なーんだ？</div>
+      <div class="level-badge lv-badge-1" id="lvBadge">レベル1</div>
+    </div>
+    <div class="silhouette-wrap" id="silhouetteWrap"></div>
+    <div id="answerReveal" style="font-size:22px;color:#FF6B9D;min-height:28px;"></div>
+  </div>
+
+  <div id="hintText" class="hint-text"></div>
+  <div class="choices" id="choices"></div>
+  <div class="result-msg" id="resultMsg"></div>
+  <button class="next-btn" id="nextBtn" onclick="nextQuestion()">つぎへ ➜</button>
+</div>
+
+<!-- クリア -->
+<div class="clear-screen" id="clearScreen">
+  <div class="clear-stars">⭐⭐⭐</div>
+  <div class="clear-title">ぜんぶ　できたよ！</div>
+  <div class="clear-score" id="clearScore"></div>
+  <button class="restart-btn" onclick="restartCurrent()">もういちど 🎉</button>
+  <button class="restart-btn" style="background:linear-gradient(135deg,#66BB6A,#388E3C);margin-top:-8px;" onclick="nextLevel()">つぎのレベルへ ➤</button>
+</div>
+
+<script>
+// ============================================================
+// カラー定義
+// ============================================================
+const COLORS = {
+  red:    '#EF5350', blue:   '#42A5F5', yellow: '#FFEE58',
+  green:  '#66BB6A', orange: '#FFA726', purple: '#AB47BC',
+  pink:   '#EC407A', cyan:   '#26C6DA', lime:   '#D4E157',
+  brown:  '#8D6E63', white:  '#ECEFF1', navy:   '#1565C0',
+  mint:   '#80CBC4', peach:  '#FFAB91', sky:    '#81D4FA',
+};
+
+// ============================================================
+// SVG ヘルパー
+// ============================================================
+const S = (body, vb='0 0 100 100') =>
+  `<svg viewBox="${vb}" xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
+
+const rect  = (x,y,w,h,c,rx=0) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${c}"/>`;
+const circ  = (cx,cy,r,c) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${c}"/>`;
+const poly  = (pts,c) => `<polygon points="${pts}" fill="${c}"/>`;
+const ell   = (cx,cy,rx,ry,c,t='') => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${c}" ${t}/>`;
+const line  = (x1,y1,x2,y2,c,w=3) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`;
+
+// ============================================================
+// レベル1: 基本図形
+// ============================================================
+const level1Items = [
+  { name:'まる',
+    svg: S( circ(50,50,40, COLORS.red) ) },
+  { name:'さんかく',
+    svg: S( poly('50,10 90,90 10,90', COLORS.blue) ) },
+  { name:'しかく',
+    svg: S( rect(10,10,80,80, COLORS.yellow) ) },
+  { name:'ほし',
+    svg: S( poly('50,8 61,36 92,36 68,56 77,84 50,65 23,84 32,56 8,36 39,36', COLORS.orange) ) },
+  { name:'ながしかく',
+    svg: S( rect(5,25,90,50, COLORS.green) ) },
+  { name:'ひし形',
+    svg: S( poly('50,8 92,50 50,92 8,50', COLORS.purple) ) },
+  { name:'はんまる',
+    svg: S(`<path d="M10,60 A40,40 0 0,1 90,60 Z" fill="${COLORS.pink}"/>`) },
+  { name:'だえん',
+    svg: S( ell(50,50,42,26, COLORS.cyan) ) },
+  { name:'ごかく',
+    svg: S( poly('50,10 90,38 76,84 24,84 10,38', COLORS.lime) ) },
+  { name:'ろっかく',
+    svg: S( poly('50,10 86,30 86,70 50,90 14,70 14,30', COLORS.peach) ) },
+];
+
+// ============================================================
+// レベル2: 図形の組み合わせ
+// ============================================================
+const level2Items = [
+  { name:'いえ',
+    svg: S(
+      rect(15,50,70,45, COLORS.orange) +
+      poly('50,8 85,50 15,50', COLORS.red) +
+      rect(38,68,24,27, COLORS.brown)  // ドア
+    ) },
+  { name:'ゆきだるま',
+    svg: S(
+      circ(50,72,24, COLORS.white) +
+      circ(50,36,18, COLORS.white) +
+      circ(44,33,3, '#333') +   // 目
+      circ(56,33,3, '#333') +
+      poly('46,40 54,40 50,46', COLORS.orange) // 鼻
+    ) },
+  { name:'ロケット',
+    svg: S(
+      rect(35,30,30,50, COLORS.blue) +
+      poly('35,30 50,8 65,30', COLORS.red) +
+      poly('10,80 35,60 35,80', COLORS.orange) +  // 左ひれ
+      poly('65,60 90,80 65,80', COLORS.orange) +  // 右ひれ
+      circ(50,50,10, COLORS.cyan)                 // 窓
+    ) },
+  { name:'きのこ',
+    svg: S(
+      rect(36,58,28,34, COLORS.peach) +           // 軸
+      ell(50,52,38,26, COLORS.red) +              // 笠
+      circ(36,48,6, COLORS.white) +
+      circ(58,44,8, COLORS.white) +
+      circ(68,52,5, COLORS.white)
+    ) },
+  { name:'さかな',
+    svg: S(
+      ell(44,50,30,18, COLORS.orange) +
+      poly('74,50 92,34 92,66', COLORS.peach) +  // しっぽ
+      circ(26,44,5, COLORS.white) +
+      circ(26,44,2.5, '#333')
+    ) },
+  { name:'くるま',
+    svg: S(
+      rect(8,50,84,28, COLORS.red) +
+      poly('18,50 30,28 70,28 82,50', COLORS.peach) + // 屋根
+      circ(28,78,12, '#222') + circ(28,78,6, '#999') + // 左タイヤ
+      circ(72,78,12, '#222') + circ(72,78,6, '#999') + // 右タイヤ
+      rect(32,34,16,14, COLORS.cyan) +   // 左窓
+      rect(52,34,16,14, COLORS.cyan)     // 右窓
+    ) },
+  { name:'はな',
+    svg: S(
+      circ(50,28,14, COLORS.pink) +
+      circ(72,40,14, COLORS.pink) +
+      circ(72,62,14, COLORS.pink) +
+      circ(50,74,14, COLORS.pink) +
+      circ(28,62,14, COLORS.pink) +
+      circ(28,40,14, COLORS.pink) +
+      circ(50,50,16, COLORS.yellow)
+    ) },
+  { name:'ふね',
+    svg: S(
+      poly('10,60 20,35 80,35 90,60', COLORS.brown) + // 船体
+      poly('10,60 90,60 82,75 18,75', COLORS.orange) + // 底
+      rect(46,10,8,28, COLORS.peach) + // マスト
+      poly('54,10 54,32 78,20', COLORS.red) // 帆
+    ) },
+  { name:'ロボット',
+    svg: S(
+      rect(28,10,44,30, COLORS.blue) +   // 頭
+      circ(20,20,6, COLORS.blue) + circ(80,20,6, COLORS.blue) + // 耳
+      rect(18,42,64,40, COLORS.navy) +   // 体
+      rect(6,44,10,32, COLORS.blue) +    // 左腕
+      rect(84,44,10,32, COLORS.blue) +   // 右腕
+      rect(26,84,18,12, COLORS.blue) +   // 左足
+      rect(56,84,18,12, COLORS.blue) +   // 右足
+      rect(36,20,12,12, COLORS.cyan) +   // 左目
+      rect(52,20,12,12, COLORS.cyan) +   // 右目
+      rect(34,32,32,6,  COLORS.red)      // 口
+    ) },
+];
+
+// ============================================================
+// レベル3: テトリス型・台形など → 向きを変えた選択肢
+// ============================================================
+
+// 各アイテム: baseSvg=出題シルエット, choices=[{svg,label,correct}]
+// correct が true のものが正解
+
+function makeTetris(rotation, color) {
+  // L字テトリス (中心50,50周り)
+  const shapes = {
+    0:   `${rect(30,30,20,60,color)}${rect(50,70,20,20,color)}`,   // L字 ↑
+    90:  `${rect(30,30,60,20,color)}${rect(30,50,20,20,color)}`,   // L字 →（回転90°）
+    180: `${rect(30,30,20,20,color)}${rect(30,50,40,20,color)}${rect(50,70,0,0,color)}` +
+         `${rect(30,30,20,60,color)}${rect(50,30,20,20,color)}`,   // L字 ↓（180°）
+    270: `${rect(30,50,60,20,color)}${rect(70,30,20,20,color)}`,   // L字 ←（270°）
+  };
+  return S(shapes[rotation] || shapes[0]);
+}
+
+// S字テトリス
+function makeSShape(rotation, color) {
+  const shapes = {
+    0:   `${rect(50,30,30,20,color)}${rect(30,50,30,20,color)}${rect(50,50,10,0,color)}` +
+         `${rect(50,30,20,20,color)}${rect(30,50,20,20,color)}${rect(50,50,20,20,color)}`,
+    90:  `${rect(30,30,20,40,color)}${rect(50,50,20,40,color)}${rect(30,50,20,20,color)}`,
+  };
+  // 簡易版
+  if(rotation===0) return S(`${rect(50,30,20,20,color)}${rect(30,50,20,20,color)}${rect(50,50,20,20,color)}${rect(30,70,20,20,color)}`);
+  return S(`${rect(30,30,40,20,color)}${rect(50,50,20,20,color)}${rect(50,50,40,20,color)}${rect(70,30,0,0,color)}` +
+           `${rect(30,30,20,20,color)}${rect(50,30,20,20,color)}${rect(50,50,20,20,color)}${rect(70,50,20,20,color)}`);
+}
+
+// 台形
+function makeTrap(rotation, color) {
+  const shapes = {
+    0:   poly('20,70 80,70 65,30 35,30', color),   // 台形 ↑広い
+    90:  poly('30,20 70,35 70,65 30,80', color),   // 台形 →
+    180: poly('20,30 80,30 65,70 35,70', color),   // 台形 ↓広い
+    270: poly('30,20 70,20 70,80 30,65', color),   // 台形 ←
+  };
+  return S(shapes[rotation] || shapes[0]);
+}
+
+// T字テトリス
+function makeTShape(rotation, color) {
+  const shapes = {
+    0:   `${rect(20,30,60,20,color)}${rect(40,50,20,40,color)}`,         // T↓
+    90:  `${rect(30,20,20,60,color)}${rect(50,40,30,20,color)}`,         // T→
+    180: `${rect(20,50,60,20,color)}${rect(40,30,20,20,color)}`,         // T↑
+    270: `${rect(20,40,60,20,color)}${rect(20,20,20,40,color)}`,         // T←（修正）
+  };
+  return S(shapes[rotation]);
+}
+
+// J字テトリス（4方向が明確に違う）
+function makeJShape(rotation, color) {
+  const shapes = {
+    0:   `${rect(50,10,20,70,color)}${rect(30,70,40,20,color)}`,
+    90:  `${rect(10,30,70,20,color)}${rect(10,10,20,40,color)}`,
+    180: `${rect(30,20,20,70,color)}${rect(30,20,40,20,color)}`,
+    270: `${rect(10,50,70,20,color)}${rect(70,50,20,40,color)}`,
+  };
+  return S(shapes[rotation]);
+}
+
+// 矢印
+function makeArrow(rotation, color) {
+  const shapes = {
+    0:   poly('10,40 60,40 60,20 90,50 60,80 60,60 10,60', color),   // →
+    90:  poly('40,10 40,60 20,60 50,90 80,60 60,60 60,10', color),   // ↓
+    180: poly('90,40 40,40 40,20 10,50 40,80 40,60 90,60', color),   // ←
+    270: poly('40,90 40,40 20,40 50,10 80,40 60,40 60,90', color),   // ↑
+  };
+  return S(shapes[rotation]);
+}
+
+// 1/4円（扇形）
+function makeFan(rotation, color) {
+  const shapes = {
+    0:   `<path d="M20,80 L20,20 A60,60 0 0,1 80,80 Z" fill="${color}"/>`,   // 右上
+    90:  `<path d="M20,20 L80,20 A60,60 0 0,1 20,80 Z" fill="${color}"/>`,   // 左上
+    180: `<path d="M80,20 L80,80 A60,60 0 0,1 20,20 Z" fill="${color}"/>`,   // 左下
+    270: `<path d="M80,80 L20,80 A60,60 0 0,1 80,20 Z" fill="${color}"/>`,   // 右下
+  };
+  return S(shapes[rotation]);
+}
+
+// L字
+function makeLShape(rotation, color) {
+  const shapes = {
+    0:   `${rect(30,10,20,70,color)}${rect(30,70,40,20,color)}`,   // L
+    90:  `${rect(10,30,70,20,color)}${rect(10,30,20,40,color)}`,   // L→
+    180: `${rect(30,10,20,80,color)}${rect(10,10,20,20,color)}`,   // L↑
+    270: `${rect(10,50,70,20,color)}${rect(70,30,20,40,color)}`,   // L←
+  };
+  return S(shapes[rotation]);
+}
+
+const LEVEL3_BASE_ITEMS = [
+  {
+    name: 'L字のかたち',
+    baseRotation: 0,
+    makeFn: makeLShape,
+    color: COLORS.blue,
+    correctRotation: 0,
+    wrongRotations: [90, 180, 270],
+  },
+  {
+    name: 'T字のかたち',
+    baseRotation: 0,
+    makeFn: makeTShape,
+    color: COLORS.red,
+    correctRotation: 0,
+    wrongRotations: [90, 180, 270],
+  },
+  {
+    name: 'だいけいのかたち',
+    baseRotation: 0,
+    makeFn: makeTrap,
+    color: COLORS.orange,
+    correctRotation: 0,
+    wrongRotations: [90, 180, 270],
+  },
+  {
+    name: 'やじるしのかたち',
+    baseRotation: 0,
+    makeFn: makeArrow,
+    color: COLORS.green,
+    correctRotation: 0,
+    wrongRotations: [90, 180, 270],
+  },
+  {
+    name: 'おうぎのかたち',
+    baseRotation: 0,
+    makeFn: makeFan,
+    color: COLORS.purple,
+    correctRotation: 0,
+    wrongRotations: [90, 180, 270],
+  },
+  {
+    name: 'J字のかたち',
+    baseRotation: 0,
+    makeFn: makeJShape,
+    color: COLORS.pink,
+    correctRotation: 0,
+    wrongRotations: [90, 180, 270],
+  },
+];
+
+// レベル3アイテムを「どの向きが正解か」をランダムにして生成
+function buildLevel3Items() {
+  const items = [];
+
+  LEVEL3_BASE_ITEMS.forEach(base => {
+    const allRots = [base.correctRotation, ...base.wrongRotations];
+    const correctRot = allRots[Math.floor(Math.random() * allRots.length)];
+
+    const silhouetteSvg = base.makeFn(correctRot, base.color);
+    const silhouetteShadow = base.makeFn(correctRot, '#1a2535');
+
+    const choiceRots = [...new Set([...allRots])];
+    const choices = choiceRots.map(rot => ({
+      svg: base.makeFn(rot, base.color),
+      label: '',
+      correct: rot === correctRot,
+    }));
+
+    while(choices.length < 4) {
+      const wrongOther = allRots.filter(r => r !== correctRot);
+      const extra = wrongOther[choices.length % wrongOther.length];
+      choices.push({
+        svg: base.makeFn(extra, base.color),
+        label: '',
+        correct: false,
+      });
+    }
+
+    items.push({
+      name: base.name,
+      silhouetteSvg,
+      silhouetteShadow,
+      colorSvg: silhouetteSvg,
+      choices: shuffle(choices.slice(0,4)),
+      isLevel3: true,
+    });
+  });
+  return items;
+}
+
+// ============================================================
+// ゲーム状態
+// ============================================================
+let currentLevel = 1;
+let shuffledItems = [];
+let current = 0, score = 0, answered = false;
+const TOTAL = 6;
+
+function shuffle(a){ return [...a].sort(()=>Math.random()-0.5); }
+
+function getItems(level) {
+  if(level === 1) return shuffle(level1Items).slice(0, TOTAL);
+  if(level === 2) return shuffle(level2Items).slice(0, TOTAL);
+  return shuffle(buildLevel3Items()).slice(0, TOTAL);
+}
+
+function switchLevel(lv) {
+  currentLevel = lv;
+  score = 0;
+  document.getElementById('score').textContent = score;
+  // タブ更新
+  [1,2,3].forEach(n => {
+    const tab = document.getElementById('tab'+n);
+    tab.className = `level-tab${n===lv ? ' active-lv'+lv : ''}`;
+  });
+  // ゲームエリアのクラス
+  const ga = document.getElementById('gameArea');
+  ga.className = 'game-area lv'+lv;
+  // バッジ
+  const badge = document.getElementById('lvBadge');
+  badge.className = 'level-badge lv-badge-'+lv;
+  badge.textContent = 'レベル'+lv;
+  // 背景
+  document.body.style.background = lv===1? '#E3F2FD': lv===2? '#FFF8E1': '#F3E5F5';
+  // ヒント
+  document.getElementById('hintText').textContent =
+    lv===3 ? '⬛ かげと　おなじ　むきの　えを　えらんでね！' : '';
+  // 開始
+  shuffledItems = getItems(lv);
+  current = 0; answered = false;
+  updateProgress();
+  renderQuestion();
+}
+
+function updateProgress() {
+  document.getElementById('progress').style.width = (current/TOTAL*100)+'%';
+}
+
+// ============================================================
+// 描画
+// ============================================================
+function makeShadow(svg) {
+  return svg
+    .replace(/fill="[^"]*"/g, 'fill="#1a2535"')
+    .replace(/stroke="[^"]*"/g, 'stroke="#1a2535"')
+    .replace(/class="shadow-svg"/g, '');
+}
+
+function renderQuestion() {
+  answered = false;
+  const item = shuffledItems[current];
+
+  const wrap = document.getElementById('silhouetteWrap');
+  wrap.classList.remove('revealed');
+
+  // シルエット（黒塗り）と正解カラーSVG
+  const shadowSvg  = item.isLevel3 ? item.silhouetteShadow : makeShadow(item.svg);
+  const colorSvg   = item.isLevel3 ? item.colorSvg          : item.svg;
+
+  wrap.innerHTML =
+    `<div class="shadow-svg" style="display:block">${shadowSvg}</div>` +
+    `<div class="color-svg"  style="display:none">${colorSvg}</div>`;
+
+  // 正解名リセット
+  const ar = document.getElementById('answerReveal');
+  ar.textContent = '';
+
+  // 結果リセット
+  const rm = document.getElementById('resultMsg');
+  rm.className = 'result-msg'; rm.textContent = '';
+
+  // 次へ非表示
+  document.getElementById('nextBtn').classList.remove('show');
+
+  // ===== 選択肢 =====
+  const container = document.getElementById('choices');
+  container.innerHTML = '';
+
+  if(item.isLevel3) {
+    // レベル3: choices配列をそのまま使う（data-idxで正解を判定）
+    item.choices.forEach((ch, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.dataset.idx = idx;
+      btn.innerHTML = ch.svg;
+      btn.onclick = () => handleAnswer(ch.correct, btn, item, idx);
+      container.appendChild(btn);
+    });
+  } else {
+    // レベル1・2: 正解1 + 他3択
+    const pool = currentLevel===1 ? level1Items : level2Items;
+    const wrong = shuffle(pool.filter(i=>i.name!==item.name)).slice(0,3);
+    const choices = shuffle([item, ...wrong]);
+
+    choices.forEach(ch => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.innerHTML = ch.svg + `<span class="label">${ch.name}</span>`;
+      btn.onclick = () => handleAnswer(ch.name===item.name, btn, item, ch.name);
+      container.appendChild(btn);
+    });
+  }
+}
+
+function handleAnswer(isCorrect, btn, item, choiceKey) {
+  if(answered) return;
+  answered = true;
+  document.querySelectorAll('.choice-btn').forEach(b => b.onclick=null);
+
+  const rm = document.getElementById('resultMsg');
+  const ar = document.getElementById('answerReveal');
+  const wrap = document.getElementById('silhouetteWrap');
+
+  if(isCorrect) {
+    btn.classList.add('correct');
+    score++;
+    document.getElementById('score').textContent = score;
+    rm.textContent = '🎉 せいかい！';
+    rm.style.color = '#4CAF50';
+    rm.classList.add('show');
+    wrap.classList.add('revealed');
+    ar.textContent = '✨ ' + item.name;
+    showConfetti();
+    showStars(btn);
+  } else {
+    btn.classList.add('wrong');
+    rm.textContent = '😢 ざんねん！';
+    rm.style.color = '#F44336';
+    rm.classList.add('show');
+    // 正解ボタンをハイライト（1つだけ）
+    if(item.isLevel3) {
+      // data-idxで正解のボタンを特定
+      const correctIdx = item.choices.findIndex(c => c.correct);
+      document.querySelectorAll('.choice-btn').forEach(b => {
+        if(parseInt(b.dataset.idx) === correctIdx) b.classList.add('correct');
+      });
+    } else {
+      document.querySelectorAll('.choice-btn').forEach(b => {
+        if(b.querySelector('.label')?.textContent === item.name) b.classList.add('correct');
+      });
+    }
+    wrap.classList.add('revealed');
+    ar.textContent = '💡 ' + item.name;
+  }
+  setTimeout(()=>{ document.getElementById('nextBtn').classList.add('show'); }, 700);
+}
+
+function nextQuestion() {
+  current++;
+  updateProgress();
+  if(current >= TOTAL) {
+    showClear();
+  } else {
+    renderQuestion();
+  }
+}
+
+function showClear() {
+  const cs = document.getElementById('clearScreen');
+  document.getElementById('clearScore').textContent =
+    `レベル${currentLevel}：${score}もん せいかい！`;
+  cs.classList.add('show');
+  for(let i=0;i<60;i++) setTimeout(()=>spawnConfettiPiece(), i*40);
+  // 最終レベルなら「つぎのレベルへ」ボタンを隠す
+  cs.querySelectorAll('button')[1].style.display = currentLevel<3 ? 'block':'none';
+}
+
+function restartCurrent() {
+  document.getElementById('clearScreen').classList.remove('show');
+  switchLevel(currentLevel);
+}
+function nextLevel() {
+  document.getElementById('clearScreen').classList.remove('show');
+  if(currentLevel < 3) switchLevel(currentLevel + 1);
+}
+
+// ===== 花吹雪 =====
+const confColors=['#FF6B9D','#FFD700','#87CEEB','#98E898','#FF9EAA','#FFE680','#AB47BC'];
+function spawnConfettiPiece(){
+  const el=document.createElement('div');
+  el.className='confetti-piece';
+  el.style.left=Math.random()*100+'vw';
+  el.style.background=confColors[Math.floor(Math.random()*confColors.length)];
+  const sz=8+Math.random()*10;
+  el.style.width=sz+'px'; el.style.height=sz+'px';
+  el.style.borderRadius=Math.random()>.5?'50%':'3px';
+  el.style.animationDuration=(1.2+Math.random()*1.5)+'s';
+  document.getElementById('confetti').appendChild(el);
+  setTimeout(()=>el.remove(),3000);
+}
+function showConfetti(){ for(let i=0;i<28;i++) setTimeout(()=>spawnConfettiPiece(),i*30); }
+
+function showStars(btn){
+  const rect2=btn.getBoundingClientRect();
+  ['⭐','✨','🌟'].forEach((s,i)=>{
+    const el=document.createElement('div');
+    el.className='star-burst'; el.textContent=s;
+    el.style.left=(rect2.left+rect2.width/2+(i-1)*40)+'px';
+    el.style.top=rect2.top+'px';
+    el.style.animationDelay=(i*0.12)+'s';
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),1200);
+  });
+}
+
+// ===== 起動 =====
+switchLevel(1);
+</script>
+</body>
+</html>

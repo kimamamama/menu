@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ブロックゲーム</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  font-family: 'Hiragino Maru Gothic Pro', 'BIZ UDPGothic', sans-serif;
+  background: #ede9fe;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ===== HEADER ===== */
+#header {
+  flex-shrink: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 17px;
+  letter-spacing: 3px;
+  color: #7c3aed;
+  padding: 5px 0 4px;
+  background: #f5f0ff;
+  border-bottom: 2px solid #c4b5fd;
+}
+
+/* ===== SCORE ===== */
+#score-bar {
+  flex-shrink: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 3px 8px 4px;
+  background: #f5f0ff;
+  border-bottom: 2px solid #c4b5fd;
+}
+
+.badge {
+  background: white;
+  border: 2px solid #c4b5fd;
+  border-radius: 20px;
+  padding: 1px 10px;
+  font-size: 11px;
+  color: #6d28d9;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.badge .val { color: #db2777; font-size: 14px; font-weight: bold; }
+
+/* ===== OUTER FRAME =====
+   This single div carries the visible border.
+   Canvas widths are set = INNER_W = outerW - 2*BORDER_PX
+   so they fit perfectly flush inside.
+*/
+#frame {
+  flex-shrink: 0;
+  border: 4px solid #7c3aed;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 6px 24px rgba(124,58,237,0.28);
+  /* width set by JS to COLS*CELL + 2*4 */
+}
+
+/* ===== PREP AREA ===== */
+#prep-area {
+  position: relative;
+  background: #dbeafe;
+  border-bottom: 3px solid #7c3aed;
+  /* width: 100% of #frame inner = COLS*CELL exactly */
+}
+
+#prep-label {
+  position: absolute;
+  top: 4px; left: 8px;
+  font-size: 10px;
+  color: #2563eb;
+  letter-spacing: 1px;
+  pointer-events: none;
+}
+
+/* ===== GAME AREA ===== */
+#game-area {
+  background: #fdf4ff;
+  border-bottom: 3px solid #7c3aed;
+}
+
+/* ===== BUTTON AREA ===== */
+#btn-area {
+  background: #fef9c3;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  padding: 6px;
+  gap: 5px;
+}
+
+.btn {
+  background: white;
+  border: 2px solid #a78bfa;
+  color: #6d28d9;
+  font-size: 20px;
+  padding: 9px 0;
+  border-radius: 50px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  text-align: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.08s;
+}
+
+.btn:active, .btn.pressed {
+  background: #ede9fe;
+}
+
+.btn-drop {
+  background: linear-gradient(150deg, #a78bfa, #7c3aed);
+  color: white;
+  border-color: #5b21b6;
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.btn-drop:active, .btn-drop.pressed {
+  background: linear-gradient(150deg, #7c3aed, #5b21b6);
+}
+
+/* ===== OVERLAY ===== */
+#overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(196,181,253,0.7);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+#overlay.show { display: flex; }
+
+#overlay-box {
+  background: white;
+  border: 3px solid #7c3aed;
+  padding: 24px 32px;
+  text-align: center;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(124,58,237,0.3);
+  animation: popIn .3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn { from{transform:scale(.7);opacity:0} to{transform:scale(1);opacity:1} }
+
+#overlay-emoji { font-size: 44px; margin-bottom: 6px; }
+#overlay-title { font-size: 22px; color: #7c3aed; letter-spacing: 3px; margin-bottom: 10px; }
+#overlay-info  { font-size: 14px; color: #6d28d9; margin-bottom: 18px; line-height: 2.2; }
+
+#overlay-btn {
+  background: linear-gradient(135deg, #a78bfa, #7c3aed);
+  border: 2px solid #5b21b6;
+  color: white;
+  font-family: inherit;
+  font-size: 15px;
+  letter-spacing: 2px;
+  padding: 10px 28px;
+  cursor: pointer;
+  border-radius: 50px;
+}
+#overlay-btn:active { opacity: 0.85; }
+
+/* floaters */
+.floater {
+  position: fixed; pointer-events: none;
+  font-size: 16px; opacity: 0.12;
+  animation: floatUp linear infinite;
+}
+@keyframes floatUp {
+  0%   { transform:translateY(110vh); opacity:0; }
+  8%   { opacity:.12; }
+  92%  { opacity:.12; }
+  100% { transform:translateY(-15vh); opacity:0; }
+}
+</style>
+</head>
+<body>
+
+<div class="floater" style="left:6%;animation-duration:11s;animation-delay:0s">🌸</div>
+<div class="floater" style="left:24%;animation-duration:14s;animation-delay:4s">⭐</div>
+<div class="floater" style="left:55%;animation-duration:9s;animation-delay:1s">💫</div>
+<div class="floater" style="left:82%;animation-duration:13s;animation-delay:6s">🌟</div>
+
+<div id="header">🧩 ブロックゲーム 🧩</div>
+
+<div id="score-bar">
+  <div class="badge">🧱 <span class="val" id="lines-val">0</span> 列</div>
+  <div class="badge">⭐ <span class="val" id="score-val">0</span> 点</div>
+  <div class="badge">🚀 LV <span class="val" id="level-val">1</span></div>
+</div>
+
+<!-- 外枠は #frame 1つだけ。中身は幅ぴったり -->
+<div id="frame">
+  <div id="prep-area">
+    <div id="prep-label">✦ NEXT ✦</div>
+    <canvas id="prep-canvas"></canvas>
+  </div>
+  <div id="game-area">
+    <canvas id="game-canvas"></canvas>
+  </div>
+  <div id="btn-area">
+    <button class="btn" id="btn-left">◀</button>
+    <button class="btn" id="btn-rotL">↺</button>
+    <button class="btn btn-drop" id="btn-down">⇓ DROP</button>
+    <button class="btn" id="btn-rotR">↻</button>
+    <button class="btn" id="btn-right">▶</button>
+  </div>
+</div>
+
+<div id="overlay">
+  <div id="overlay-box">
+    <div id="overlay-emoji">🌈</div>
+    <div id="overlay-title">GAME OVER</div>
+    <div id="overlay-info"></div>
+    <button id="overlay-btn">▶ もう一かい</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  var COLS = 7, ROWS = 14, PREP_ROWS = 5;
+  var BORDER = 4;   // #frame border-width px
+  var CELL = 40;
+
+  var gameCanvas = document.getElementById('game-canvas');
+  var gctx       = gameCanvas.getContext('2d');
+  var prepCanvas = document.getElementById('prep-canvas');
+  var pctx       = prepCanvas.getContext('2d');
+  var frame      = document.getElementById('frame');
+  var prepArea   = document.getElementById('prep-area');
+  var overlay    = document.getElementById('overlay');
+  var overlayInfo= document.getElementById('overlay-info');
+
+  /* ---- COLORS ---- */
+  var COLORS = [
+    { c:'#7dd4fc', e:'#0ea5e9' },
+    { c:'#fde68a', e:'#d97706' },
+    { c:'#d8b4fe', e:'#9333ea' },
+    { c:'#fdba74', e:'#ea580c' },
+    { c:'#86efac', e:'#16a34a' },
+    { c:'#f9a8d4', e:'#db2777' },
+    { c:'#93c5fd', e:'#2563eb' },
+    { c:'#fca5a5', e:'#ef4444' },
+    { c:'#6ee7b7', e:'#059669' },
+    { c:'#fcd34d', e:'#b45309' },
+  ];
+
+  function clone(s){ return s.map(function(r){ return r.slice(); }); }
+
+  /* ---- RANDOM PIECE GENERATOR (2〜4 cells, always connected) ----
+     成長法: 1マスからスタートし、隣接マスにランダム拡張する。
+  */
+  function randPiece(){
+    var count = 2 + Math.floor(Math.random() * 3); // 2, 3, 4 のどれか
+    var G = 5, mid = 2;
+    var grid = [], r, c;
+    for(r=0;r<G;r++){ grid[r]=[]; for(c=0;c<G;c++) grid[r][c]=0; }
+    grid[mid][mid] = 1;
+    var cells = [{r:mid,c:mid}];
+    var dirs = [{r:-1,c:0},{r:1,c:0},{r:0,c:-1},{r:0,c:1}];
+    var tries = 0;
+    while(cells.length < count && tries < 200){
+      tries++;
+      var base = cells[Math.floor(Math.random()*cells.length)];
+      var d = dirs[Math.floor(Math.random()*dirs.length)];
+      var nr = base.r+d.r, nc = base.c+d.c;
+      if(nr>=0&&nr<G&&nc>=0&&nc<G&&!grid[nr][nc]){
+        grid[nr][nc]=1; cells.push({r:nr,c:nc});
+      }
+    }
+    var minR=G,maxR=0,minC=G,maxC=0;
+    for(r=0;r<G;r++) for(c=0;c<G;c++) if(grid[r][c]){
+      if(r<minR)minR=r; if(r>maxR)maxR=r;
+      if(c<minC)minC=c; if(c>maxC)maxC=c;
+    }
+    var shape=[];
+    for(r=minR;r<=maxR;r++){
+      var row=[];
+      for(c=minC;c<=maxC;c++) row.push(grid[r][c]);
+      shape.push(row);
+    }
+    var col = COLORS[Math.floor(Math.random()*COLORS.length)];
+    return { shape:shape, c:col.c, e:col.e };
+  }
+
+  function rotateCW(s){
+    var R=s.length, C=s[0].length, res=[], r, c;
+    for(c=0;c<C;c++){ res[c]=[]; for(r=0;r<R;r++) res[c][r]=s[R-1-r][c]; }
+    return res;
+  }
+  function rotateCCW(s){
+    var R=s.length, C=s[0].length, res=[], r, c;
+    for(c=0;c<C;c++){ res[c]=[]; for(r=0;r<R;r++) res[c][r]=s[r][C-1-c]; }
+    return res;
+  }
+
+  /* ---- SIZING ----
+     Strategy:
+       - CELL = min(by_width, by_height)
+       - Canvas inner width = COLS * CELL
+       - #frame outer width = COLS*CELL + BORDER*2
+       - height budget: vh - header(~36) - score(~32) - btn_area(~58) - frame_borders(BORDER*2) - dividers(3+3)
+  */
+  function calcCell(){
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+
+    // width: canvas must fit inside frame (frame = canvas + 2*BORDER)
+    var byW = Math.floor((vw - BORDER * 2) / COLS);
+
+    // height: fixed chrome + dividers + frame top+bottom borders
+    var fixedH = 36 + 32 + 58 + BORDER * 2 + 3 + 3; // btn inner ~58 (padding12+btn34+gap)
+    var available = vh - fixedH;
+    var byH = Math.floor(available / (PREP_ROWS + ROWS));
+
+    CELL = Math.min(byW, byH);
+    if(CELL < 20) CELL = 20;
+    if(CELL > 56) CELL = 56;
+  }
+
+  function applySize(){
+    calcCell();
+    var W = COLS * CELL;   // canvas pixel width = inner width of #frame
+
+    // Canvases: exact inner width
+    prepCanvas.width  = W;
+    prepCanvas.height = PREP_ROWS * CELL;
+    gameCanvas.width  = W;
+    gameCanvas.height = ROWS * CELL;
+
+    // #frame outer width = W + left border + right border
+    // But because border is OUTSIDE the content box (box-sizing:border-box means
+    // border is INSIDE). We set width to W so content = W, borders add to outside.
+    // overflow:hidden clips correctly. Use explicit width on frame = W + 0
+    // (border-box: total = W + borders, content = W - borders? No — border-box
+    //  means total WIDTH includes border. So set frame width = W + BORDER*2)
+    frame.style.width = (W + BORDER * 2) + 'px';
+
+    // prep-area and game-area: width=100% of frame content = W
+    // (they're block elements inside frame, so they naturally fill W)
+    prepArea.style.height = (PREP_ROWS * CELL) + 'px';
+  }
+
+  /* ---- STATE ---- */
+  var board, stg, stgX, stgY, fall, fallX, fallY, nxt;
+  var lines, score, level, dropMs, lastDrop, falling_active, running, animId;
+
+  function newGame(){
+    applySize();
+    var r, c;
+    board = [];
+    for(r=0;r<ROWS;r++){ board[r]=[]; for(c=0;c<COLS;c++) board[r][c]=0; }
+    lines=0; score=0; level=1; dropMs=650;
+    fall=null; falling_active=false; running=true;
+    overlay.classList.remove('show');
+    document.getElementById('lines-val').textContent='0';
+    document.getElementById('score-val').textContent='0';
+    document.getElementById('level-val').textContent='1';
+    nxt = randPiece();
+    bringNext();
+    lastDrop = performance.now();
+    cancelAnimationFrame(animId);
+    tick(lastDrop);
+  }
+
+  function bringNext(){
+    stg = nxt; nxt = randPiece();
+    // 幅がCOLSを超えた場合はCOLS内に収める
+    var pw = stg.shape[0].length;
+    if(pw > COLS) {
+      // 幅超過の列を右から削る（稀なケース）
+      stg.shape = stg.shape.map(function(row){ return row.slice(0, COLS); });
+      pw = COLS;
+    }
+    stgX = Math.floor((COLS - pw) / 2);
+    stgY = Math.floor((PREP_ROWS - stg.shape.length) / 2);
+    if(stgY < 0) stgY = 0;
+    falling_active = false; fall = null;
+  }
+
+  function ok(shape, ox, oy){
+    var r, c;
+    for(r=0;r<shape.length;r++)
+      for(c=0;c<shape[r].length;c++)
+        if(shape[r][c]){
+          var nr=oy+r, nc=ox+c;
+          if(nr<0||nr>=ROWS||nc<0||nc>=COLS||board[nr][nc]) return false;
+        }
+    return true;
+  }
+
+  function lock(){
+    var r, c;
+    for(r=0;r<fall.shape.length;r++)
+      for(c=0;c<fall.shape[r].length;c++)
+        if(fall.shape[r][c]) board[fallY+r][fallX+c] = fall.c;
+    clearFull();
+    if(running) bringNext();
+  }
+
+  function clearFull(){
+    var cleared=0, r, c, full, empty;
+    for(r=ROWS-1;r>=0;r--){
+      full=true;
+      for(c=0;c<COLS;c++) if(!board[r][c]){ full=false; break; }
+      if(full){
+        board.splice(r,1);
+        empty=[]; for(c=0;c<COLS;c++) empty[c]=0;
+        board.unshift(empty);
+        cleared++; r++;
+      }
+    }
+    if(cleared){
+      lines += cleared;
+      score += ([0,100,300,500,800][cleared]||800) * level;
+      level = Math.floor(lines/5) + 1;
+      dropMs = Math.max(80, 650-(level-1)*55);
+      document.getElementById('lines-val').textContent = lines;
+      document.getElementById('score-val').textContent = score;
+      document.getElementById('level-val').textContent = level;
+    }
+  }
+
+  function gameOver(){
+    running = false;
+    overlayInfo.innerHTML = '列: <b>'+lines+'</b>　点: <b>'+score+'</b>　LV: <b>'+level+'</b>';
+    overlay.classList.add('show');
+  }
+
+  /* ---- DRAW HELPERS ---- */
+  function rrect(ctx, x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.lineTo(x+w-r, y); ctx.arcTo(x+w,y, x+w,y+r, r);
+    ctx.lineTo(x+w, y+h-r); ctx.arcTo(x+w,y+h, x+w-r,y+h, r);
+    ctx.lineTo(x+r, y+h); ctx.arcTo(x,y+h, x,y+h-r, r);
+    ctx.lineTo(x, y+r); ctx.arcTo(x,y, x+r,y, r);
+    ctx.closePath();
+  }
+
+  function drawCell(ctx, gx, gy, color, edge){
+    var x = gx*CELL, y = gy*CELL;
+    var pad = 1.5, r = Math.max(3, CELL*0.16);
+    // shadow
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.18)';
+    ctx.shadowBlur = 3;
+    ctx.shadowOffsetY = 2;
+    ctx.fillStyle = color;
+    rrect(ctx, x+pad, y+pad, CELL-pad*2, CELL-pad*2, r);
+    ctx.fill();
+    ctx.restore();
+    // edge stroke
+    ctx.strokeStyle = edge || 'rgba(0,0,0,0.2)';
+    ctx.lineWidth = 1.8;
+    rrect(ctx, x+pad+1, y+pad+1, CELL-pad*2-2, CELL-pad*2-2, r-1);
+    ctx.stroke();
+    // shine
+    ctx.fillStyle = 'rgba(255,255,255,0.44)';
+    rrect(ctx, x+pad+CELL*0.12, y+pad+CELL*0.08, CELL*0.52, CELL*0.19, CELL*0.06);
+    ctx.fill();
+  }
+
+  function gridLines(ctx, cols, rows, color){
+    ctx.strokeStyle = color; ctx.lineWidth = 0.4;
+    var i;
+    for(i=0;i<=rows;i++){ ctx.beginPath(); ctx.moveTo(0,i*CELL); ctx.lineTo(cols*CELL,i*CELL); ctx.stroke(); }
+    for(i=0;i<=cols;i++){ ctx.beginPath(); ctx.moveTo(i*CELL,0); ctx.lineTo(i*CELL,rows*CELL); ctx.stroke(); }
+  }
+
+  function drawPrep(){
+    var r, c;
+    pctx.fillStyle = '#dbeafe';
+    pctx.fillRect(0, 0, prepCanvas.width, prepCanvas.height);
+    gridLines(pctx, COLS, PREP_ROWS, 'rgba(96,165,250,0.22)');
+    if(stg){
+      for(r=0;r<stg.shape.length;r++)
+        for(c=0;c<stg.shape[r].length;c++)
+          if(stg.shape[r][c]) drawCell(pctx, stgX+c, stgY+r, stg.c, stg.e);
+    }
+  }
+
+  function drawGame(){
+    var r, c;
+    gctx.fillStyle = '#fdf4ff';
+    gctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+    gridLines(gctx, COLS, ROWS, 'rgba(196,181,253,0.22)');
+    for(r=0;r<ROWS;r++)
+      for(c=0;c<COLS;c++)
+        if(board[r][c]) drawCell(gctx, c, r, board[r][c], null);
+    if(falling_active && fall){
+      // ghost
+      var gy = fallY;
+      while(ok(fall.shape, fallX, gy+1)) gy++;
+      if(gy !== fallY){
+        gctx.save(); gctx.globalAlpha = 0.22;
+        for(r=0;r<fall.shape.length;r++)
+          for(c=0;c<fall.shape[r].length;c++)
+            if(fall.shape[r][c]) drawCell(gctx, fallX+c, gy+r, fall.c, fall.e);
+        gctx.restore();
+      }
+      for(r=0;r<fall.shape.length;r++)
+        for(c=0;c<fall.shape[r].length;c++)
+          if(fall.shape[r][c]) drawCell(gctx, fallX+c, fallY+r, fall.c, fall.e);
+    }
+  }
+
+  function draw(){ drawPrep(); drawGame(); }
+
+  /* ---- LOOP ---- */
+  function tick(ts){
+    if(!running) return;
+    if(falling_active && fall){
+      if(ts - lastDrop > dropMs){
+        if(ok(fall.shape, fallX, fallY+1)){
+          fallY++;
+        } else {
+          if(fallY <= 0){ gameOver(); return; }
+          lock();
+          if(!running) return;
+        }
+        lastDrop = ts;
+      }
+    }
+    draw();
+    animId = requestAnimationFrame(tick);
+  }
+
+  /* ---- CONTROLS ---- */
+  function stageLeft(){
+    if(falling_active||!stg) return;
+    if(stgX>0){ stgX--; draw(); }
+  }
+  function stageRight(){
+    if(falling_active||!stg) return;
+    if(stgX+stg.shape[0].length<COLS){ stgX++; draw(); }
+  }
+  function stageRotR(){
+    if(falling_active||!stg) return;
+    var s = rotateCW(stg.shape);
+    stgX = Math.min(stgX, COLS-s[0].length);
+    stgY = Math.min(stgY, PREP_ROWS-s.length);
+    stg.shape = s; draw();
+  }
+  function stageRotL(){
+    if(falling_active||!stg) return;
+    var s = rotateCCW(stg.shape);
+    stgX = Math.min(stgX, COLS-s[0].length);
+    stgY = Math.min(stgY, PREP_ROWS-s.length);
+    stg.shape = s; draw();
+  }
+  function dropNow(){
+    if(falling_active||!stg) return;
+    fall = { shape: clone(stg.shape), c: stg.c, e: stg.e };
+    fallX = stgX; fallY = 0; stg = null;
+    if(!ok(fall.shape, fallX, fallY)){ gameOver(); return; }
+    falling_active = true;
+    lastDrop = performance.now();
+    draw();
+  }
+
+  function bindBtn(id, fn){
+    var el = document.getElementById(id);
+    el.addEventListener('touchstart', function(e){ e.preventDefault(); el.classList.add('pressed'); fn(); }, {passive:false});
+    el.addEventListener('touchend',   function(e){ e.preventDefault(); el.classList.remove('pressed'); }, {passive:false});
+    el.addEventListener('mousedown',  function(){ el.classList.add('pressed'); fn(); });
+    el.addEventListener('mouseup',    function(){ el.classList.remove('pressed'); });
+    el.addEventListener('mouseleave', function(){ el.classList.remove('pressed'); });
+  }
+
+  bindBtn('btn-left',  stageLeft);
+  bindBtn('btn-right', stageRight);
+  bindBtn('btn-rotL',  stageRotL);
+  bindBtn('btn-rotR',  stageRotR);
+  bindBtn('btn-down',  dropNow);
+
+  document.addEventListener('keydown', function(e){
+    if(e.key==='ArrowLeft') { e.preventDefault(); stageLeft(); }
+    if(e.key==='ArrowRight'){ e.preventDefault(); stageRight(); }
+    if(e.key==='ArrowDown') { e.preventDefault(); dropNow(); }
+    if(e.key==='ArrowUp'||e.key==='x'){ e.preventDefault(); stageRotR(); }
+    if(e.key==='z'){ e.preventDefault(); stageRotL(); }
+  });
+
+  document.getElementById('overlay-btn').addEventListener('click', newGame);
+  window.addEventListener('resize', function(){ applySize(); draw(); });
+
+  newGame();
+})();
+</script>
+</body>
+</html>

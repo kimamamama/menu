@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>おちてくるよ！キャッチゲーム</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=Fredoka+One&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;touch-action:none;}
+body{
+  background:linear-gradient(180deg,#87CEEB 0%,#b0e0f5 45%,#c8f0a0 100%);
+  font-family:'Kosugi Maru',sans-serif;
+  user-select:none;
+}
+
+/* 雲 */
+.cloud{position:fixed;background:white;border-radius:50px;opacity:.85;animation:cloudFloat linear infinite;pointer-events:none;z-index:0;}
+.cloud::before,.cloud::after{content:'';position:absolute;background:white;border-radius:50%;}
+.cloud-1{width:120px;height:40px;top:8%;left:-130px;animation-duration:28s;}
+.cloud-1::before{width:60px;height:60px;top:-30px;left:15px;}
+.cloud-1::after{width:45px;height:45px;top:-22px;left:55px;}
+.cloud-2{width:90px;height:30px;top:20%;left:-100px;animation-duration:22s;animation-delay:-10s;opacity:.6;}
+.cloud-2::before{width:45px;height:45px;top:-22px;left:10px;}
+.cloud-2::after{width:35px;height:35px;top:-16px;left:40px;}
+.cloud-3{width:150px;height:50px;top:5%;left:-160px;animation-duration:35s;animation-delay:-18s;}
+.cloud-3::before{width:70px;height:70px;top:-38px;left:20px;}
+.cloud-3::after{width:55px;height:55px;top:-28px;left:70px;}
+@keyframes cloudFloat{from{left:-200px}to{left:110%}}
+
+/* HUD */
+#hud{
+  position:fixed;top:0;left:0;right:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:6px 14px;
+  background:rgba(255,255,255,.5);
+  backdrop-filter:blur(8px);
+  border-bottom:3px solid rgba(255,255,255,.7);
+  z-index:100;gap:8px;min-height:52px;
+}
+#scoreTxt{
+  font-family:'Fredoka One',sans-serif;
+  font-size:clamp(1rem,4vw,1.8rem);
+  color:#e05a00;
+  text-shadow:2px 2px 0 rgba(255,255,255,.8);
+  white-space:nowrap;
+}
+#scoreTxt span{color:#c0392b;font-size:clamp(1.2rem,4.5vw,2.2rem);}
+
+/* タイマー */
+#timerTxt{
+  font-family:'Fredoka One',sans-serif;
+  font-size:clamp(1rem,4vw,1.8rem);
+  color:#1a6fc4;
+  text-shadow:2px 2px 0 rgba(255,255,255,.8);
+  white-space:nowrap;
+  flex-shrink:0;
+  transition:color .3s;
+}
+#timerTxt.urgent{ color:#e74c3c; animation:pulse .5s ease-in-out infinite alternate; }
+@keyframes pulse{ from{transform:scale(1)} to{transform:scale(1.15)} }
+
+#levelTxt{
+  font-family:'Fredoka One',sans-serif;
+  font-size:clamp(.8rem,3vw,1.1rem);
+  color:#2c7a2c;
+  background:rgba(200,255,150,.7);
+  border:2px solid #5ab55a;
+  border-radius:20px;
+  padding:3px 12px;
+  white-space:nowrap;
+  flex-shrink:0;
+}
+.lvbtns{display:flex;gap:5px;flex-shrink:0;}
+.lvbtn{
+  font-family:'Kosugi Maru',sans-serif;
+  font-size:clamp(.65rem,2.5vw,.85rem);
+  padding:4px 9px;border-radius:20px;
+  border:2px solid #aaa;
+  background:rgba(255,255,255,.6);
+  cursor:pointer;transition:all .18s;color:#555;white-space:nowrap;
+}
+.lvbtn.on{background:#ff8c00;color:white;border-color:#e05a00;font-weight:bold;}
+.lvbtn:hover:not(.on){background:rgba(255,200,100,.5);}
+
+/* Canvas */
+#gc{position:fixed;top:0;left:0;display:block;cursor:none;z-index:10;}
+
+/* Ground */
+#gnd{
+  position:fixed;bottom:0;left:0;right:0;
+  background:linear-gradient(180deg,#6ab04c,#4a8a2c);
+  z-index:50;border-top:4px solid #5a9a3c;pointer-events:none;
+}
+#gnd::before{
+  content:'';position:absolute;top:-8px;left:0;right:0;height:10px;
+  background:radial-gradient(ellipse 12px 10px at 6px 50%,#7ec850 60%,transparent 70%) repeat-x;
+  background-size:14px 10px;
+}
+
+/* START */
+#startSc{
+  position:fixed;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  background:rgba(135,206,235,.72);backdrop-filter:blur(10px);
+  z-index:200;padding:10px 16px;gap:10px;overflow:hidden;
+}
+.stitle{
+  font-family:'Fredoka One',sans-serif;
+  font-size:clamp(1.4rem,5vw,2.8rem);
+  color:#e05a00;
+  text-shadow:3px 3px 0 white,5px 5px 0 rgba(0,0,0,.1);
+  text-align:center;line-height:1.25;flex-shrink:0;
+}
+.semojis{display:flex;gap:6px;flex-shrink:0;}
+.semoji{
+  font-size:clamp(1.6rem,4.5vw,2.4rem);
+  display:inline-block;transform-origin:center bottom;
+  animation:sway 2s ease-in-out infinite alternate;
+}
+.semoji:nth-child(1){animation-delay:0s;}
+.semoji:nth-child(2){animation-delay:.3s;}
+.semoji:nth-child(3){animation-delay:.6s;}
+.semoji:nth-child(4){animation-delay:.9s;}
+@keyframes sway{from{transform:rotate(-9deg) scale(1);}to{transform:rotate(9deg) scale(1.08);}}
+
+/* レベル選択 */
+.slvwrap{width:100%;max-width:420px;flex-shrink:0;}
+.slvlabel{font-family:'Fredoka One',sans-serif;font-size:clamp(.85rem,3vw,1rem);color:#444;text-align:center;margin-bottom:6px;}
+.slvbtns{display:flex;gap:8px;justify-content:center;}
+.slvbtn{
+  flex:1;max-width:120px;
+  font-family:'Kosugi Maru',sans-serif;
+  font-size:clamp(.72rem,2.5vw,.9rem);
+  padding:7px 5px;border-radius:14px;
+  border:2.5px solid #ccc;
+  background:rgba(255,255,255,.65);
+  cursor:pointer;transition:all .18s;color:#555;text-align:center;line-height:1.45;
+}
+.slvbtn .ico{font-size:1.3em;display:block;}
+.slvbtn.on{background:linear-gradient(135deg,#ff8c00,#e05a00);color:white;border-color:#e05a00;box-shadow:0 4px 0 #a03000;transform:translateY(-2px);}
+.slvbtn:hover:not(.on){background:rgba(255,200,100,.5);border-color:#e8a040;}
+
+/* ヒントボックス：各行を段落で */
+.hintbox{
+  background:rgba(255,255,255,.65);border-radius:14px;
+  padding:8px 18px;
+  font-size:clamp(.75rem,2.4vw,.92rem);color:#444;
+  max-width:360px;width:100%;flex-shrink:0;
+}
+.hintrow{
+  display:flex;align-items:center;gap:8px;
+  padding:4px 0;
+  border-bottom:1px dashed rgba(0,0,0,.1);
+}
+.hintrow:last-child{border-bottom:none;}
+.hintrow .hem{font-size:1.4em;flex-shrink:0;}
+.hintrow .hdesc{flex:1;}
+.hintrow .hpt{font-family:'Fredoka One',sans-serif;font-size:1.05em;margin-left:auto;white-space:nowrap;}
+.hintrow .hpt.plus{color:#27ae60;}
+.hintrow .hpt.zero{color:#e67e22;}
+.hintrow .hpt.minus{color:#e74c3c;}
+
+/* 時間表示 */
+.hinttimer{
+  margin-top:6px;
+  text-align:center;
+  font-size:clamp(.75rem,2.4vw,.88rem);
+  color:#1a6fc4;
+  font-weight:bold;
+}
+
+.bigbtn{
+  font-family:'Fredoka One',sans-serif;
+  font-size:clamp(1rem,4vw,1.5rem);
+  padding:11px 38px;border-radius:50px;border:none;
+  background:linear-gradient(135deg,#ff8c00,#e05a00);
+  color:white;cursor:pointer;
+  box-shadow:0 6px 0 #a03000,0 8px 20px rgba(0,0,0,.18);
+  transition:transform .1s,box-shadow .1s;flex-shrink:0;
+}
+.bigbtn:hover{transform:translateY(-3px);box-shadow:0 9px 0 #a03000,0 12px 24px rgba(0,0,0,.18);}
+.bigbtn:active{transform:translateY(3px);box-shadow:0 3px 0 #a03000;}
+
+/* GAME OVER */
+#goSc{
+  display:none;position:fixed;inset:0;flex-direction:column;
+  align-items:center;justify-content:center;
+  background:rgba(0,0,0,.45);backdrop-filter:blur(8px);
+  z-index:300;gap:14px;
+}
+#goSc h2{font-family:'Fredoka One',sans-serif;font-size:clamp(2rem,7vw,3rem);color:white;text-shadow:3px 3px 0 #c0392b;}
+#goScore{font-family:'Fredoka One',sans-serif;font-size:clamp(1.3rem,5vw,2rem);color:#ffd700;text-shadow:2px 2px 0 #996600;}
+
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-8px)}
+  40%{transform:translateX(8px)}
+  60%{transform:translateX(-5px)}
+  80%{transform:translateX(5px)}
+}
+</style>
+</head>
+<body>
+
+<div class="cloud cloud-1"></div>
+<div class="cloud cloud-2"></div>
+<div class="cloud cloud-3"></div>
+
+<!-- HUD -->
+<div id="hud">
+  <div id="scoreTxt">🌟 <span id="scoreNum">0</span></div>
+  <div id="timerTxt">⏱ <span id="timerNum">30</span>秒</div>
+  <div id="levelTxt">レベル <span id="levelNum">1</span></div>
+  <div class="lvbtns">
+    <button class="lvbtn on" onclick="setLevel(1)">Lv1</button>
+    <button class="lvbtn"    onclick="setLevel(2)">Lv2</button>
+    <button class="lvbtn"    onclick="setLevel(3)">Lv3</button>
+  </div>
+</div>
+
+<canvas id="gc"></canvas>
+<div id="gnd"></div>
+
+<!-- START -->
+<div id="startSc">
+  <div class="stitle">おちてくるよ！<br>キャッチゲーム 🧺</div>
+
+  <div class="semojis">
+    <span class="semoji">🍎</span>
+    <span class="semoji">🍌</span>
+    <span class="semoji">🍓</span>
+    <span class="semoji">🍕</span>
+  </div>
+
+  <!-- レベル選択 -->
+  <div class="slvwrap">
+    <div class="slvlabel">レベルをえらんでね！</div>
+    <div class="slvbtns">
+      <button class="slvbtn on" onclick="pickLevel(1,this)">
+        <span class="ico">🐢</span><b>レベル1</b><br><small>ゆっくり<br>食べ物のみ</small>
+      </button>
+      <button class="slvbtn" onclick="pickLevel(2,this)">
+        <span class="ico">🐇</span><b>レベル2</b><br><small>ふつう<br>食べ物＋動物</small>
+      </button>
+      <button class="slvbtn" onclick="pickLevel(3,this)">
+        <span class="ico">⚡</span><b>レベル3</b><br><small>ふつう<br>＋爆弾あり！</small>
+      </button>
+    </div>
+  </div>
+
+  <!-- ヒント：1行ずつ -->
+  <div class="hintbox">
+    <div class="hintrow">
+      <span class="hem">🍎</span>
+      <span class="hdesc">食べ物をキャッチ！</span>
+      <span class="hpt plus">+1ポイント</span>
+    </div>
+    <div class="hintrow">
+      <span class="hem">🐶</span>
+      <span class="hdesc">動物はそのまま</span>
+      <span class="hpt zero">±0ポイント</span>
+    </div>
+    <div class="hintrow">
+      <span class="hem">💣</span>
+      <span class="hdesc">爆弾はさけて！</span>
+      <span class="hpt minus">－3ポイント</span>
+    </div>
+    <div class="hinttimer">⏱ 30秒で何ポイントとれるかな？</div>
+  </div>
+
+  <button class="bigbtn" onclick="startGame()">はじめる！</button>
+</div>
+
+<!-- GAME OVER -->
+<div id="goSc">
+  <div id="goEmoji" style="font-size:clamp(3rem,10vw,5rem);line-height:1;"></div>
+  <h2 id="goTitle" style="font-family:'Fredoka One',sans-serif;font-size:clamp(1.6rem,6vw,2.8rem);color:white;text-shadow:3px 3px 0 #c0392b;text-align:center;"></h2>
+  <div id="goScore" style="font-family:'Fredoka One',sans-serif;font-size:clamp(1.1rem,4vw,1.8rem);color:#ffd700;text-shadow:2px 2px 0 #996600;text-align:center;"></div>
+  <div id="goSub" style="font-family:'Kosugi Maru',sans-serif;font-size:clamp(.9rem,3vw,1.2rem);color:white;text-shadow:1px 1px 0 rgba(0,0,0,.4);text-align:center;"></div>
+  <button class="bigbtn" onclick="retryGame()">もういちど！</button>
+</div>
+
+<script>
+(function() {
+  var canvas   = document.getElementById('gc');
+  var ctx      = canvas.getContext('2d');
+  var gndEl    = document.getElementById('gnd');
+  var scoreEl  = document.getElementById('scoreNum');
+  var levelEl  = document.getElementById('levelNum');
+  var timerEl  = document.getElementById('timerNum');
+  var timerTxt = document.getElementById('timerTxt');
+  var startSc  = document.getElementById('startSc');
+  var goSc     = document.getElementById('goSc');
+  var goScore  = document.getElementById('goScore');
+  var goTitle  = document.getElementById('goTitle');
+  var goEmoji  = document.getElementById('goEmoji');
+  var goSub    = document.getElementById('goSub');
+
+  var FOODS   = ['🍎','🍊','🍋','🍇','🍓','🍒','🍑','🥝','🍕','🍔','🍩','🍦','🧁','🌽','🥕','🍞','🧀','🍙'];
+  var ANIMALS = ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐸','🐙','🦋','🐧','🦄'];
+  var BOMB    = '💣';
+  var LCFG    = {
+    1: { spd:[60,95],   ms:1800, pool:['food','food','food'] },
+    2: { spd:[130,180], ms:1300, pool:['food','food','animal'] },
+    3: { spd:[130,180], ms:1100, pool:['food','food','animal','bomb','bomb'] }
+  };
+  var GAME_TIME = 30; // 秒
+  var MAX_Y = 180;
+
+  var bask       = { x:0, w:110, h:57 };
+  var HH         = 52;
+  var GH         = 50;
+  var lv         = 1;
+  var score      = 0;
+  var foodCaught = 0;
+  var totalSpawn = 0;
+  var running    = false;
+  var items      = [];
+  var popups     = [];
+  var parts      = [];
+  var spawnT     = 0;
+  var lastT      = 0;
+  var startTs    = 0;
+  var timeLeft   = GAME_TIME;
+  var shaking    = false;
+  var rafId      = 0;
+
+  // ── リサイズ ──────────────────────────────────────────
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    var h = document.getElementById('hud').getBoundingClientRect().height;
+    HH = h > 0 ? h : 52;
+    GH = Math.max(40, Math.min(70, window.innerHeight * 0.07));
+    gndEl.style.height = GH + 'px';
+    bask.w = Math.max(90, Math.min(160, window.innerWidth * 0.23));
+    bask.h = Math.round(bask.w * 0.52);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // ── ポインター ────────────────────────────────────────
+  function basketTopY() { return canvas.height - GH - bask.h - 8; }
+  function basketMidY() { return basketTopY() + bask.h / 2; }
+
+  function moveBasket(cx, cy) {
+    if (Math.abs(cy - basketMidY()) > MAX_Y) return;
+    bask.x = Math.max(0, Math.min(canvas.width - bask.w, cx - bask.w / 2));
+  }
+
+  canvas.addEventListener('mousemove', function(e){ moveBasket(e.clientX, e.clientY); });
+  canvas.addEventListener('touchstart', function(e){ e.preventDefault(); moveBasket(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
+  canvas.addEventListener('touchmove',  function(e){ e.preventDefault(); moveBasket(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
+
+  // ── レベル選択 ────────────────────────────────────────
+  window.pickLevel = function(n, btn) {
+    lv = n;
+    var all = document.querySelectorAll('.slvbtn');
+    for (var i=0;i<all.length;i++) all[i].classList.remove('on');
+    btn.classList.add('on');
+    syncHud();
+  };
+
+  window.setLevel = function(n) {
+    lv = n;
+    syncHud();
+    if (running) { items=[]; spawnT=performance.now(); }
+  };
+
+  function syncHud() {
+    levelEl.textContent = lv;
+    var bs = document.querySelectorAll('.lvbtn');
+    for (var i=0;i<bs.length;i++) bs[i].classList.toggle('on', i+1===lv);
+  }
+
+  // ── タイマー表示更新 ──────────────────────────────────
+  function updateTimer(now) {
+    var elapsed = (now - startTs) / 1000;
+    timeLeft = Math.max(0, GAME_TIME - elapsed);
+    var secs = Math.ceil(timeLeft);
+    timerEl.textContent = secs;
+    if (secs <= 5) {
+      timerTxt.classList.add('urgent');
+    } else {
+      timerTxt.classList.remove('urgent');
+    }
+    return timeLeft <= 0;
+  }
+
+  // ── スポーン ──────────────────────────────────────────
+  function spawn(now) {
+    var cfg  = LCFG[lv];
+    var pool = cfg.pool;
+    var type = pool[Math.floor(Math.random() * pool.length)];
+    var em   = type==='food'   ? FOODS[Math.floor(Math.random()*FOODS.length)]
+             : type==='animal' ? ANIMALS[Math.floor(Math.random()*ANIMALS.length)]
+             : BOMB;
+    var sz   = Math.max(40, Math.min(64, canvas.width * 0.1));
+    var spd  = cfg.spd[0] + Math.random() * (cfg.spd[1] - cfg.spd[0]);
+    items.push({
+      x: Math.random()*(canvas.width - sz*2) + sz,
+      y: HH + sz,
+      sz:sz, spd:spd, em:em, type:type,
+      rot:(Math.random()-.5)*.5,
+      rotV:(Math.random()-.5)*1.5
+    });
+    if (type === 'food') totalSpawn++;
+    spawnT = now;
+  }
+
+  function burst(x, y, col) {
+    for (var i=0;i<12;i++) {
+      var a = Math.random()*Math.PI*2;
+      var s = 80+Math.random()*120;
+      parts.push({x:x,y:y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-80,r:4+Math.random()*5,col:col,life:1});
+    }
+  }
+  function popup(x, y, txt, col) { popups.push({x:x,y:y,txt:txt,col:col,life:1}); }
+
+  // ── かご描画 ──────────────────────────────────────────
+  function drawBasket(bx, by, bw, bh) {
+    ctx.save();
+    ctx.shadowColor='rgba(0,0,0,.2)'; ctx.shadowBlur=10; ctx.shadowOffsetY=5;
+    ctx.beginPath();
+    ctx.moveTo(bx+8,by); ctx.lineTo(bx+bw-8,by); ctx.lineTo(bx+bw,by+bh); ctx.lineTo(bx,by+bh);
+    ctx.closePath();
+    var g=ctx.createLinearGradient(bx,by,bx+bw,by+bh);
+    g.addColorStop(0,'#d4a45a'); g.addColorStop(.4,'#c8913f'); g.addColorStop(1,'#a06820');
+    ctx.fillStyle=g; ctx.fill(); ctx.shadowBlur=0;
+    ctx.strokeStyle='rgba(100,50,0,.35)'; ctx.lineWidth=1.5;
+    for (var i=1;i<4;i++) {
+      var py=by+(bh/4)*i, r=i/4;
+      ctx.beginPath(); ctx.moveTo(bx+8*(1-r),py); ctx.lineTo(bx+bw-8*(1-r),py); ctx.stroke();
+    }
+    for (var i=1;i<6;i++) {
+      var px=bx+(bw/6)*i;
+      ctx.beginPath(); ctx.moveTo(px-1,by+2); ctx.lineTo(px+1,by+bh-2); ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.moveTo(bx+8,by); ctx.lineTo(bx+bw-8,by); ctx.lineTo(bx+bw,by+bh); ctx.lineTo(bx,by+bh);
+    ctx.closePath(); ctx.strokeStyle='#e8b870'; ctx.lineWidth=3; ctx.stroke();
+    ctx.beginPath(); ctx.arc(bx+bw/2,by-12,bw*.35,Math.PI,0);
+    ctx.strokeStyle='#c8913f'; ctx.lineWidth=5; ctx.stroke();
+    ctx.strokeStyle='#e8b870'; ctx.lineWidth=2; ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawEmoji(em, x, y, sz, rot) {
+    ctx.save();
+    ctx.translate(x,y); ctx.rotate(rot);
+    ctx.font=sz+'px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.shadowColor='rgba(0,0,0,.2)'; ctx.shadowBlur=6; ctx.shadowOffsetY=3;
+    ctx.fillText(em,0,0); ctx.restore();
+  }
+
+  // ── ゲームループ ──────────────────────────────────────
+  function loop(now) {
+    if (!running) return;
+    var dt = Math.min((now - lastT) / 1000, 0.05);
+    lastT  = now;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    // タイマーチェック
+    var timeUp = updateTimer(now);
+    if (timeUp) {
+      endGame();
+      return;
+    }
+
+    var flY   = canvas.height - GH;
+    var baskY = flY - bask.h - 8;
+
+    if (now - spawnT > LCFG[lv].ms) spawn(now);
+
+    // アイテム更新
+    for (var i=items.length-1; i>=0; i--) {
+      var it=items[i];
+      it.y  += it.spd * dt;
+      it.rot += it.rotV * dt;
+      if (it.y > flY + it.sz) { items.splice(i,1); continue; }
+
+      if (it.x > bask.x - it.sz*.35 &&
+          it.x < bask.x + bask.w + it.sz*.35 &&
+          it.y > baskY - it.sz*.4 &&
+          it.y < baskY + bask.h*.6) {
+        items.splice(i,1);
+        if (it.type==='food') {
+          score++; foodCaught++; popup(it.x,baskY-20,'+1','#27ae60'); burst(it.x,baskY,'#ffd700');
+        } else if (it.type==='animal') {
+          popup(it.x,baskY-20,'±0','#e67e22'); burst(it.x,baskY,'#aee8ff');
+        } else {
+          score-=3; popup(it.x,baskY-20,'－3💥','#e74c3c'); burst(it.x,baskY,'#ff6b6b');
+          if (!shaking) {
+            shaking=true;
+            canvas.style.animation='none';
+            void canvas.offsetHeight;
+            canvas.style.animation='shake .4s ease';
+            setTimeout(function(){shaking=false;},420);
+          }
+        }
+        scoreEl.textContent = score;
+      }
+    }
+
+    // パーティクル
+    for (var i=parts.length-1; i>=0; i--) {
+      var p=parts[i];
+      p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=200*dt; p.life-=dt*2;
+      if (p.life<=0){parts.splice(i,1);continue;}
+      ctx.save(); ctx.globalAlpha=p.life; ctx.fillStyle=p.col;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r*p.life,0,Math.PI*2); ctx.fill(); ctx.restore();
+    }
+
+    // 描画
+    for (var i=0;i<items.length;i++) drawEmoji(items[i].em,items[i].x,items[i].y,items[i].sz,items[i].rot);
+    drawBasket(bask.x, baskY, bask.w, bask.h);
+
+    // ポップアップ
+    var fsz=Math.round(canvas.width*.045);
+    for (var i=popups.length-1; i>=0; i--) {
+      var p=popups[i];
+      p.y-=50*dt; p.life-=dt*1.5;
+      if (p.life<=0){popups.splice(i,1);continue;}
+      ctx.save(); ctx.globalAlpha=Math.min(p.life,1);
+      ctx.font='bold '+fsz+'px Fredoka One,sans-serif';
+      ctx.textAlign='center'; ctx.fillStyle=p.col;
+      ctx.shadowColor='white'; ctx.shadowBlur=6;
+      ctx.fillText(p.txt,p.x,p.y); ctx.restore();
+    }
+
+    rafId = requestAnimationFrame(loop);
+  }
+
+  // ── ゲーム終了 ────────────────────────────────────────
+  function endGame() {
+    running = false;
+    cancelAnimationFrame(rafId);
+    timerTxt.classList.remove('urgent');
+
+    // 褒めメッセージ決定（キャッチした食べ物数とスコアで分岐）
+    var isPerfect = (foodCaught > 0 && foodCaught >= totalSpawn && score >= totalSpawn);
+    var em, title, sub;
+    if (isPerfect) {
+      em    = '🏆✨';
+      title = 'パーフェクト！！';
+      sub   = '全部ゲットしたよ！すごすぎる！';
+    } else if (score >= 15) {
+      em    = '🌟🌟🌟';
+      title = 'すごい！！';
+      sub   = foodCaught + 'こも食べ物をゲット！チャンピオン！';
+    } else if (score >= 10) {
+      em    = '🎉🎊';
+      title = 'やったね！';
+      sub   = foodCaught + 'こゲット！とってもじょうず！';
+    } else if (score >= 5) {
+      em    = '😊👍';
+      title = 'いいね！';
+      sub   = foodCaught + 'こゲットできたよ！';
+    } else if (score > 0) {
+      em    = '🍎😄';
+      title = 'がんばったね！';
+      sub   = foodCaught + 'こゲット！もう一回チャレンジ！';
+    } else {
+      em    = '🤔💪';
+      title = 'もう一回！';
+      sub   = 'つぎはもっといけるよ！ファイト！';
+    }
+
+    goEmoji.textContent = em;
+    goTitle.textContent = title;
+    goScore.textContent = '🌟 ' + score + ' ポイント！';
+    goSub.textContent   = sub;
+    goSc.style.display  = 'flex';
+  }
+
+  // ── リセット ──────────────────────────────────────────
+  function resetState() {
+    score=0; foodCaught=0; totalSpawn=0; items=[]; parts=[]; popups=[];
+    timeLeft = GAME_TIME;
+    scoreEl.textContent = '0';
+    timerEl.textContent = GAME_TIME;
+    timerTxt.classList.remove('urgent');
+  }
+
+  window.startGame = function() {
+    startSc.style.display='none';
+    syncHud();
+    resetState();
+    running  = true;
+    bask.x   = canvas.width/2 - bask.w/2;
+    lastT    = performance.now();
+    startTs  = lastT;
+    spawnT   = lastT - LCFG[lv].ms;
+    rafId    = requestAnimationFrame(loop);
+  };
+
+  window.retryGame = function() {
+    goSc.style.display='none';
+    syncHud();
+    resetState();
+    running  = true;
+    bask.x   = canvas.width/2 - bask.w/2;
+    lastT    = performance.now();
+    startTs  = lastT;
+    spawnT   = lastT - LCFG[lv].ms;
+    rafId    = requestAnimationFrame(loop);
+  };
+
+  bask.x = (window.innerWidth - bask.w) / 2;
+
+})();
+</script>
+</body>
+</html>
