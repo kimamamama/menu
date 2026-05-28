@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>あんざんゲーム 🌟</title>
+<link href="https://fonts.googleapis.com/css2?family=Kaisei+Decol:wght@400;700&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink:    #FFB3C6;
+    --yellow:  #FFF0A0;
+    --mint:    #B5EAD7;
+    --lavender:#C9B8F0;
+    --sky:     #AED9F7;
+    --peach:   #FFDAB3;
+    --coral:   #FF8FAB;
+    --deep-purple: #7B5EA7;
+    --text:    #4A3F6B;
+    --white:   #FFFDF8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: linear-gradient(135deg, #FFE4EE 0%, #E8F4FF 40%, #E4FFF4 100%);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* floating deco */
+  .deco {
+    position: fixed;
+    pointer-events: none;
+    font-size: 2rem;
+    animation: float 6s ease-in-out infinite;
+    opacity: 0.35;
+    z-index: 0;
+  }
+  .deco:nth-child(1)  { top:5%;  left:3%;  animation-delay:0s;    font-size:2.2rem; }
+  .deco:nth-child(2)  { top:15%; right:5%; animation-delay:1s;    font-size:1.8rem; }
+  .deco:nth-child(3)  { top:40%; left:2%;  animation-delay:2s;    font-size:2.5rem; }
+  .deco:nth-child(4)  { top:60%; right:3%; animation-delay:0.5s;  font-size:2rem; }
+  .deco:nth-child(5)  { bottom:15%; left:5%; animation-delay:3s;  font-size:1.6rem; }
+  .deco:nth-child(6)  { bottom:5%; right:4%; animation-delay:1.5s;font-size:2.2rem; }
+  @keyframes float {
+    0%,100% { transform: translateY(0) rotate(0deg); }
+    50%      { transform: translateY(-18px) rotate(8deg); }
+  }
+
+  /* ========== SCREEN SYSTEM ========== */
+  .screen { display:none; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; position:relative; z-index:1; }
+  .screen.active { display:flex; }
+
+  /* ========== START SCREEN ========== */
+  #start-screen { gap: 24px; }
+  .game-title {
+    font-family: 'Kaisei Decol', serif;
+    font-size: clamp(2.2rem, 8vw, 3.8rem);
+    font-weight: 700;
+    color: var(--deep-purple);
+    text-shadow: 3px 3px 0 var(--pink), 6px 6px 0 rgba(0,0,0,0.08);
+    text-align: center;
+    letter-spacing: 0.05em;
+    animation: bounce-in 0.6s cubic-bezier(.36,.07,.19,.97) both;
+  }
+  @keyframes bounce-in {
+    0%   { transform: scale(0.3); opacity:0; }
+    60%  { transform: scale(1.1); opacity:1; }
+    80%  { transform: scale(0.95); }
+    100% { transform: scale(1); }
+  }
+  .subtitle {
+    font-size: clamp(1rem, 3vw, 1.3rem);
+    color: var(--coral);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+
+  .section-label {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--deep-purple);
+    margin-bottom: 4px;
+    text-align: center;
+  }
+
+  .mode-group {
+    background: rgba(255,255,255,0.7);
+    border-radius: 24px;
+    padding: 20px 28px;
+    box-shadow: 0 4px 20px rgba(200,180,240,0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(400px, 92vw);
+  }
+
+  .mode-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .mode-btn {
+    border: 3px solid transparent;
+    border-radius: 16px;
+    padding: 12px 8px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: clamp(0.8rem, 2.5vw, 0.95rem);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.18s;
+    text-align: center;
+    line-height: 1.4;
+    position: relative;
+    overflow: hidden;
+  }
+  .mode-btn::after {
+    content:'';
+    position:absolute;
+    inset:0;
+    background:rgba(255,255,255,0.4);
+    opacity:0;
+    transition:opacity 0.15s;
+  }
+  .mode-btn:hover::after { opacity:1; }
+  .mode-btn.selected {
+    transform: scale(1.04);
+    box-shadow: 0 0 0 2px var(--deep-purple), 0 6px 18px rgba(0,0,0,0.15);
+    filter: brightness(0.9) saturate(1.4);
+  }
+
+  .mode-btn[data-mode="add1"] { background:var(--yellow); border-color:#D4A000; }
+  .mode-btn[data-mode="add2"] { background:var(--mint);   border-color:#3DA882; }
+  .mode-btn[data-mode="add3"] { background:var(--sky);    border-color:#2E88B8; }
+  .mode-btn[data-mode="sub1"] { background:var(--pink);   border-color:#E0304A; }
+  .mode-btn[data-mode="sub2"] { background:var(--peach);  border-color:#C06820; }
+  .mode-btn[data-mode="sub3"] { background:var(--lavender);border-color:#6A3EC0; }
+
+  .start-btn {
+    background: linear-gradient(135deg, var(--coral), var(--lavender));
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 18px 60px;
+    font-family: 'Kaisei Decol', serif;
+    font-size: clamp(1.3rem, 4vw, 1.7rem);
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(200,100,150,0.35);
+    transition: transform 0.15s, box-shadow 0.15s;
+    letter-spacing: 0.05em;
+  }
+  .start-btn:hover { transform: translateY(-3px) scale(1.04); box-shadow: 0 10px 28px rgba(200,100,150,0.45); }
+  .start-btn:active { transform: scale(0.97); }
+
+  /* ========== GAME SCREEN ========== */
+  #game-screen {
+    justify-content: flex-start;
+    padding-top: 16px;
+    gap: 0;
+  }
+
+  /* top bar */
+  .top-bar {
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 8px 12px;
+  }
+  .back-btn {
+    background: rgba(255,255,255,0.7);
+    border: 2px solid var(--lavender);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--deep-purple);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .back-btn:hover { background: var(--lavender); color:white; }
+
+  .score-box {
+    background: linear-gradient(135deg, var(--coral), #FF6B9D);
+    border-radius: 20px;
+    padding: 8px 20px;
+    font-size: clamp(1rem, 3vw, 1.2rem);
+    font-weight: 900;
+    color: white;
+    letter-spacing: 0.05em;
+    box-shadow: 0 3px 12px rgba(255,100,130,0.35);
+  }
+
+  /* problem area */
+  .problem-card {
+    background: rgba(255,255,255,0.82);
+    border-radius: 32px;
+    padding: 24px 48px;
+    box-shadow: 0 6px 28px rgba(180,160,240,0.22);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin: 8px 0 0;
+    width: min(460px, 92vw);
+  }
+  .num-display {
+    font-family: 'Kaisei Decol', serif;
+    font-size: clamp(3.2rem, 13vw, 5.5rem);
+    font-weight: 700;
+    color: var(--deep-purple);
+    min-width: 1.2ch;
+    text-align: center;
+    line-height: 1;
+  }
+  .op-display {
+    font-family: 'Kaisei Decol', serif;
+    font-size: clamp(2.8rem, 11vw, 4.8rem);
+    font-weight: 700;
+    color: var(--coral);
+    line-height: 1;
+  }
+
+  /* 中段：答えエリア */
+  .answer-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin: 14px 0 18px;
+    width: min(460px, 92vw);
+  }
+  .eq-display {
+    font-family: 'Kaisei Decol', serif;
+    font-size: clamp(2.8rem, 11vw, 4.8rem);
+    font-weight: 700;
+    color: #6DCBA8;
+    line-height: 1;
+  }
+  /* answer area */
+  .answer-area {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .answer-slot {
+    width: clamp(56px, 16vw, 80px);
+    height: clamp(56px, 16vw, 80px);
+    border-radius: 18px;
+    background: rgba(255,255,255,0.9);
+    border: 3px dashed var(--lavender);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Kaisei Decol', serif;
+    font-size: clamp(2rem, 9vw, 3.5rem);
+    font-weight: 700;
+    color: var(--deep-purple);
+    transition: all 0.2s;
+  }
+  .answer-slot.filled { border-style: solid; border-color: var(--coral); background: var(--yellow); }
+
+  /* big maru */
+  .big-maru-container {
+    position: fixed; inset: 0; display:flex; align-items:center; justify-content:center;
+    pointer-events:none; z-index:100;
+  }
+  .big-maru {
+    width: min(70vw, 70vh);
+    height: min(70vw, 70vh);
+    border-radius: 50%;
+    border: 16px solid #FF3366;
+    opacity: 0;
+    transform: scale(0.1);
+    transition: none;
+  }
+  .big-maru.show {
+    animation: maru-pop 1s cubic-bezier(.36,.07,.19,.97) forwards;
+  }
+  @keyframes maru-pop {
+    0%   { opacity:0; transform:scale(0.1); }
+    50%  { opacity:1; transform:scale(1.08); }
+    75%  { opacity:1; transform:scale(0.95); }
+    90%  { opacity:1; transform:scale(1); }
+    100% { opacity:0; transform:scale(1.1); }
+  }
+
+  /* digit buttons */
+  .digits-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    width: min(420px, 92vw);
+    margin-bottom: 12px;
+  }
+  .digit-btn {
+    aspect-ratio: 1;
+    border-radius: 20px;
+    border: 3px solid transparent;
+    font-family: 'Kaisei Decol', serif;
+    font-size: clamp(1.5rem, 6vw, 2.4rem);
+    font-weight: 700;
+    color: var(--deep-purple);
+    cursor: pointer;
+    transition: transform 0.13s, box-shadow 0.13s, background 0.13s;
+    display: flex; align-items:center; justify-content:center;
+    position: relative;
+    overflow: hidden;
+  }
+  .digit-btn:hover { transform: scale(1.1); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
+  .digit-btn:active { transform: scale(0.94); }
+  .digit-btn.wrong {
+    background: #FF8FAB !important;
+    border-color: #FF3366 !important;
+    animation: shake 0.35s;
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+  .digit-btn.disabled { opacity:0.4; pointer-events:none; }
+
+  .clear-btn {
+    grid-column: span 2;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.7);
+    border: 3px solid var(--lavender);
+    padding: 10px;
+    font-size: clamp(0.85rem, 3vw, 1rem);
+    font-weight: 700;
+    color: var(--deep-purple);
+    cursor: pointer;
+    transition: background 0.15s, transform 0.13s;
+  }
+  .clear-btn:hover { background: var(--lavender); color:white; transform:scale(1.04); }
+
+  /* milestone popup */
+  .milestone-overlay {
+    position: fixed; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    background: rgba(0,0,0,0.25);
+    z-index: 200;
+    opacity:0;
+    pointer-events:none;
+    transition: opacity 0.3s;
+  }
+  .milestone-overlay.show { opacity:1; pointer-events:all; }
+  .milestone-card {
+    background: linear-gradient(135deg, var(--yellow), var(--pink), var(--mint));
+    border-radius: 36px;
+    padding: 36px 48px;
+    text-align: center;
+    transform: scale(0.6) rotate(-5deg);
+    transition: transform 0.4s cubic-bezier(.36,.07,.19,.97);
+    box-shadow: 0 12px 48px rgba(0,0,0,0.2);
+    max-width: 88vw;
+  }
+  .milestone-overlay.show .milestone-card { transform: scale(1) rotate(0deg); }
+  .milestone-emoji { font-size: 4rem; margin-bottom: 12px; display:block; }
+  .milestone-text {
+    font-family: 'Kaisei Decol', serif;
+    font-size: clamp(1.4rem, 5vw, 2rem);
+    font-weight: 700;
+    color: var(--deep-purple);
+    line-height: 1.5;
+  }
+  .milestone-close {
+    margin-top: 20px;
+    background: var(--coral);
+    color:white;
+    border:none;
+    border-radius: 50px;
+    padding: 12px 40px;
+    font-family:'Kaisei Decol',serif;
+    font-size: 1.2rem;
+    font-weight:700;
+    cursor:pointer;
+    transition: transform 0.15s;
+  }
+  .milestone-close:hover { transform:scale(1.06); }
+
+  /* mode badge */
+  .mode-badge {
+    background: rgba(255,255,255,0.7);
+    border-radius: 12px;
+    padding: 4px 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--deep-purple);
+    border: 2px solid var(--lavender);
+  }
+
+  /* confetti canvas */
+  #confetti-canvas {
+    position: fixed; inset:0; pointer-events:none; z-index:150;
+  }
+</style>
+</head>
+<body>
+
+<!-- floating decorations -->
+<div class="deco">🌸</div>
+<div class="deco">⭐</div>
+<div class="deco">🌈</div>
+<div class="deco">🦋</div>
+<div class="deco">🍀</div>
+<div class="deco">🌙</div>
+
+<canvas id="confetti-canvas"></canvas>
+
+<!-- ===== START SCREEN ===== -->
+<div id="start-screen" class="screen active">
+  <div class="game-title">あんざんゲーム 🌟</div>
+  <div class="subtitle">すうじとなかよくなろう！</div>
+
+  <div class="mode-group">
+    <div class="section-label">➕ たしざん</div>
+    <div class="mode-grid">
+      <button class="mode-btn" data-mode="add1" onclick="toggleMode(this)">
+        🌟 ひとけたのたしざん<br><span style="font-size:0.75em;opacity:0.8">1〜9 ＋ 1〜9</span>
+      </button>
+      <button class="mode-btn" data-mode="add2" onclick="toggleMode(this)">
+        🚀 ふたけたとひとけた<br><span style="font-size:0.75em;opacity:0.8">10〜19 ＋ 1〜9</span>
+      </button>
+      <button class="mode-btn" data-mode="add3" onclick="toggleMode(this)">
+        💎 ふたけたのたしざん<br><span style="font-size:0.75em;opacity:0.8">10〜29 ＋ 10〜29</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="mode-group">
+    <div class="section-label">➖ ひきざん</div>
+    <div class="mode-grid">
+      <button class="mode-btn" data-mode="sub1" onclick="toggleMode(this)">
+        🌸 ひとけたのひきざん<br><span style="font-size:0.75em;opacity:0.8">1〜9 − 1〜9</span>
+      </button>
+      <button class="mode-btn" data-mode="sub2" onclick="toggleMode(this)">
+        🌺 ふたけたとひとけた<br><span style="font-size:0.75em;opacity:0.8">10〜19 − 1〜9</span>
+      </button>
+      <button class="mode-btn" data-mode="sub3" onclick="toggleMode(this)">
+        👑 ふたけたのひきざん<br><span style="font-size:0.75em;opacity:0.8">10〜29 − 10〜29</span>
+      </button>
+    </div>
+  </div>
+
+  <button class="start-btn" onclick="startGame()">はじめる！ 🎉</button>
+</div>
+
+<!-- ===== GAME SCREEN ===== -->
+<div id="game-screen" class="screen">
+  <div class="top-bar">
+    <button class="back-btn" onclick="goHome()">← もどる</button>
+    <div class="mode-badge" id="mode-badge">たしざん</div>
+    <div class="score-box">⭐ <span id="score-num">0</span></div>
+  </div>
+
+  <!-- 上段：問題 -->
+  <div class="problem-card">
+    <div class="num-display" id="num-a">5</div>
+    <div class="op-display" id="op-display">＋</div>
+    <div class="num-display" id="num-b">3</div>
+  </div>
+
+  <!-- 中段：答え -->
+  <div class="answer-row">
+    <div class="eq-display">＝</div>
+    <div class="answer-area" id="answer-area"></div>
+  </div>
+
+  <!-- 下段：数字ボタン -->
+  <div class="digits-grid" id="digits-grid"></div>
+  <button class="clear-btn" onclick="clearAnswer()" id="clear-btn">🗑️ けす</button>
+</div>
+
+<!-- milestone popup -->
+<div class="milestone-overlay" id="milestone-overlay">
+  <div class="milestone-card">
+    <span class="milestone-emoji" id="m-emoji">🎉</span>
+    <div class="milestone-text" id="m-text">すごい！</div>
+    <button class="milestone-close" onclick="closeMilestone()">つぎへ！ →</button>
+  </div>
+</div>
+
+<!-- big maru overlay -->
+<div class="big-maru-container" id="maru-container">
+  <div class="big-maru" id="big-maru"></div>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+let selectedModes = [];
+let score = 0;
+let currentAnswer = '';
+let correctAnswer = 0;
+let answerDigits = 1;
+let lockedIn = false;
+let wrongBtns = new Set();
+
+// digit btn colors
+const btnColors = [
+  '#FFF0A0','#FFB3C6','#B5EAD7','#AED9F7','#FFDAB3',
+  '#C9B8F0','#FFD6A5','#CAFFBF','#BDE0FE','#FFC8DD'
+];
+
+// ============================================================
+// MODE SELECTION
+// ============================================================
+function toggleMode(btn) {
+  const m = btn.dataset.mode;
+  const idx = selectedModes.indexOf(m);
+  if (idx >= 0) {
+    selectedModes.splice(idx, 1);
+    btn.classList.remove('selected');
+  } else {
+    selectedModes.push(m);
+    btn.classList.add('selected');
+  }
+}
+
+function startGame() {
+  // rebuild from DOM to guarantee sync with buttons
+  selectedModes = Array.from(document.querySelectorAll('.mode-btn.selected')).map(b => b.dataset.mode);
+  if (selectedModes.length === 0) {
+    selectedModes = ['add1'];
+    document.querySelector('[data-mode="add1"]').classList.add('selected');
+  }
+  score = 0;
+  document.getElementById('score-num').textContent = 0;
+  showScreen('game-screen');
+  buildDigitButtons();
+  newQuestion();
+}
+
+function goHome() {
+  // clear internal state so next game starts fresh
+  selectedModes = [];
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('selected'));
+  showScreen('start-screen');
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ============================================================
+// QUESTION GENERATION
+// ============================================================
+function randomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function pickMode() {
+  return selectedModes[randomInt(0, selectedModes.length - 1)];
+}
+
+function generateProblem(mode) {
+  let a, b, op = '+';
+  switch(mode) {
+    case 'add1': a = randomInt(1,9); b = randomInt(1,9); op='+'; break;
+    case 'add2': a = randomInt(10,19); b = randomInt(1,9); op='+'; break;
+    case 'add3': a = randomInt(10,29); b = randomInt(10,29); op='+'; break;
+    case 'sub1': a = randomInt(2,9); b = randomInt(1,a); op='-'; break;
+    case 'sub2': a = randomInt(11,19); b = randomInt(1,9); if(b>a)b=a-1; op='-'; break;
+    case 'sub3': a = randomInt(11,29); b = randomInt(10, a); op='-'; break;
+  }
+  const ans = op==='+' ? a+b : a-b;
+  return { a, b, op, ans };
+}
+
+let currentMode = 'add1';
+
+function newQuestion() {
+  currentMode = pickMode();
+  const { a, b, op, ans } = generateProblem(currentMode);
+  correctAnswer = ans;
+  answerDigits = String(ans).length;
+  currentAnswer = '';
+  lockedIn = false;
+  wrongBtns.clear();
+
+  document.getElementById('num-a').textContent = a;
+  document.getElementById('num-b').textContent = b;
+  document.getElementById('op-display').textContent = op === '+' ? '＋' : '－';
+
+  const modeNames = {
+    add1:'たしざん',add2:'たしざん',add3:'たしざん',
+    sub1:'ひきざん',sub2:'ひきざん',sub3:'ひきざん'
+  };
+  document.getElementById('mode-badge').textContent = modeNames[currentMode];
+
+  renderAnswerSlots();
+  resetDigitButtons();
+}
+
+// ============================================================
+// ANSWER DISPLAY
+// ============================================================
+function renderAnswerSlots() {
+  const area = document.getElementById('answer-area');
+  area.innerHTML = '';
+  for (let i = 0; i < answerDigits; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'answer-slot';
+    slot.id = `slot-${i}`;
+    area.appendChild(slot);
+  }
+  updateSlots();
+}
+
+function updateSlots() {
+  for (let i = 0; i < answerDigits; i++) {
+    const slot = document.getElementById(`slot-${i}`);
+    if (!slot) continue;
+    const ch = currentAnswer[i] || '';
+    slot.textContent = ch;
+    slot.classList.toggle('filled', ch !== '');
+  }
+}
+
+// ============================================================
+// DIGIT BUTTONS
+// ============================================================
+function buildDigitButtons() {
+  const grid = document.getElementById('digits-grid');
+  grid.innerHTML = '';
+  for (let d = 0; d <= 9; d++) {
+    const btn = document.createElement('button');
+    btn.className = 'digit-btn';
+    btn.id = `dbtn-${d}`;
+    btn.dataset.digit = d;
+    btn.style.background = btnColors[d];
+    btn.style.borderColor = btnColors[d];
+    btn.textContent = d;
+    btn.addEventListener('click', () => pressDigit(d));
+    grid.appendChild(btn);
+  }
+}
+
+function resetDigitButtons() {
+  for (let d = 0; d <= 9; d++) {
+    const btn = document.getElementById(`dbtn-${d}`);
+    if (!btn) continue;
+    btn.classList.remove('wrong','disabled');
+    btn.style.background = btnColors[d];
+    btn.style.borderColor = btnColors[d];
+  }
+}
+
+// ============================================================
+// GAME LOGIC
+// ============================================================
+function pressDigit(d) {
+  if (lockedIn) return;
+  if (currentAnswer.length >= answerDigits) return;
+
+  currentAnswer += String(d);
+  updateSlots();
+
+  if (currentAnswer.length === answerDigits) {
+    checkAnswer(parseInt(currentAnswer));
+  }
+}
+
+function clearAnswer() {
+  if (lockedIn) return;
+  currentAnswer = '';
+  wrongBtns.clear();
+  updateSlots();
+  resetDigitButtons();
+}
+
+function checkAnswer(input) {
+  if (input === correctAnswer) {
+    lockedIn = true;
+    score++;
+    document.getElementById('score-num').textContent = score;
+    showMaru();
+    launchConfetti();
+    setTimeout(() => {
+      if (score > 0 && score % 10 === 0) {
+        showMilestone(score);
+      } else {
+        newQuestion();
+      }
+    }, 1000);
+  } else {
+    // highlight wrong, clear after shake
+    const lastDigit = parseInt(currentAnswer[currentAnswer.length-1]);
+    wrongBtns.add(lastDigit);
+    const btn = document.getElementById(`dbtn-${lastDigit}`);
+    if (btn) {
+      btn.classList.add('wrong');
+      setTimeout(() => {
+        btn.classList.remove('wrong');
+      }, 350);
+    }
+    currentAnswer = '';
+    updateSlots();
+  }
+}
+
+// ============================================================
+// MARU
+// ============================================================
+function showMaru() {
+  const m = document.getElementById('big-maru');
+  m.classList.remove('show');
+  void m.offsetWidth;
+  m.classList.add('show');
+  setTimeout(() => m.classList.remove('show'), 1000);
+}
+
+// ============================================================
+// CONFETTI
+// ============================================================
+const canvas = document.getElementById('confetti-canvas');
+const ctx = canvas.getContext('2d');
+let pieces = [];
+
+function launchConfetti() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const colors = ['#FF8FAB','#FFD700','#6DCBA8','#AED9F7','#C9B8F0','#FFDAB3'];
+  for (let i=0;i<60;i++) {
+    pieces.push({
+      x: Math.random()*canvas.width,
+      y: -20,
+      vx: (Math.random()-0.5)*5,
+      vy: Math.random()*4+3,
+      rot: Math.random()*360,
+      rotV: (Math.random()-0.5)*8,
+      color: colors[Math.floor(Math.random()*colors.length)],
+      w: Math.random()*10+8,
+      h: Math.random()*6+4,
+      life: 1
+    });
+  }
+  animateConfetti();
+}
+
+function animateConfetti() {
+  if (pieces.length === 0) return;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  pieces = pieces.filter(p => p.life > 0);
+  pieces.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    p.rot += p.rotV;
+    p.life -= 0.015;
+    ctx.save();
+    ctx.globalAlpha = p.life;
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot * Math.PI/180);
+    ctx.fillStyle = p.color;
+    ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+    ctx.restore();
+  });
+  if (pieces.length > 0) requestAnimationFrame(animateConfetti);
+  else ctx.clearRect(0,0,canvas.width,canvas.height);
+}
+
+// ============================================================
+// MILESTONE
+// ============================================================
+const milestoneMessages = [
+  { emoji:'🎉', text:'Amazing!\n10 correct!' },
+  { emoji:'🏆', text:'Excellent!\n20 correct!' },
+  { emoji:'🌈', text:'Fantastic!\n30 correct!' },
+  { emoji:'🚀', text:'Outstanding!\n40 correct!' },
+  { emoji:'👑', text:'You\'re a star!\n50 correct!' },
+];
+
+function showMilestone(s) {
+  const idx = (Math.floor(s/10) - 1) % milestoneMessages.length;
+  const m = milestoneMessages[idx];
+  document.getElementById('m-emoji').textContent = m.emoji;
+  document.getElementById('m-text').textContent = m.text;
+  document.getElementById('milestone-overlay').classList.add('show');
+}
+
+function closeMilestone() {
+  document.getElementById('milestone-overlay').classList.remove('show');
+  newQuestion();
+}
+</script>
+</body>
+</html>
