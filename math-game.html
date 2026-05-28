@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>たしざんボールゲーム🎈</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800&display=swap');
+
+:root{
+  --coral:#FF6B6B; --blue:#4D96FF; --green:#6BCB77;
+  --sun:#FFD93D;   --purple:#845EC2; --orange:#FF9A3C;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{
+  width:100%;height:100%;
+  font-family:'M PLUS Rounded 1c',sans-serif;
+  background:linear-gradient(150deg,#a8edea 0%,#fed6e3 100%);
+  overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;
+  touch-action:none;user-select:none;
+}
+
+/* ── clouds ── */
+.cloud{position:fixed;background:#fff;border-radius:50px;opacity:.5;pointer-events:none;z-index:0;}
+.cloud::before,.cloud::after{content:'';position:absolute;background:#fff;border-radius:50%;}
+.c1{width:90px;height:30px;top:2%;left:-12%;animation:fc 22s linear infinite;}
+.c1::before{width:46px;height:46px;top:-24px;left:9px;}
+.c1::after{width:32px;height:32px;top:-14px;left:38px;}
+.c2{width:65px;height:24px;top:14%;left:-9%;animation:fc 30s linear infinite 8s;}
+.c2::before{width:34px;height:34px;top:-18px;left:7px;}
+.c2::after{width:24px;height:24px;top:-11px;left:26px;}
+@keyframes fc{from{transform:translateX(0)}to{transform:translateX(115vw)}}
+
+/* ── header ── */
+#header{
+  width:100%;text-align:center;
+  padding:7px 8px 0;z-index:10;flex-shrink:0;
+}
+.title{
+  font-size:clamp(.9rem,3.6vw,1.3rem);color:#fff;
+  text-shadow:2px 2px 0 var(--coral),3px 3px 0 rgba(0,0,0,.1);
+  letter-spacing:1px;
+}
+.header-hint{
+  font-size:clamp(.6rem,2.4vw,.78rem);
+  color:rgba(255,255,255,.92);
+  margin-top:1px;
+  text-shadow:1px 1px 0 rgba(0,0,0,.1);
+}
+
+/* ── equation area ── */
+#eqArea{
+  text-align:center;
+  line-height:1.45;
+}
+#qLine{
+  display:block;
+  font-size:clamp(1.4rem,5.5vw,2rem);
+  font-weight:800; letter-spacing:2px;
+}
+#eqChain{
+  display:block;
+  font-size:clamp(1.2rem,4.8vw,1.75rem);
+  font-weight:800; letter-spacing:2px;
+  min-height:1.5em;
+}
+.qn{color:var(--coral);}
+.qp{color:var(--blue);}
+.qeq{color:var(--purple);}
+.qans{
+  display:inline-block; min-width:1.6em;
+  border-bottom:3px solid var(--purple);
+  color:var(--purple); text-align:center;
+  transition:color .3s,border-color .3s;
+}
+.qans.correct{color:var(--green);border-color:var(--green);}
+.qans.wrong  {color:var(--coral);border-color:var(--coral);animation:shakeAns .35s ease;}
+@keyframes shakeAns{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+#starBar{display:flex;gap:5px;justify-content:center;margin:3px 0 2px;flex-shrink:0;}
+.star-slot{
+  width:24px;height:24px;border-radius:50%;
+  background:rgba(255,255,255,.35);border:2px solid rgba(255,255,255,.6);
+  display:flex;align-items:center;justify-content:center;font-size:.95rem;
+}
+.star-slot.filled{
+  background:var(--sun);box-shadow:0 0 8px rgba(255,217,61,.8);
+  animation:popStar .4s cubic-bezier(.175,.885,.32,1.275);
+}
+@keyframes popStar{0%{transform:scale(0) rotate(-30deg)}60%{transform:scale(1.3) rotate(10deg)}100%{transform:scale(1)}}
+
+/* ── game card ── */
+#gameCard{
+  background:rgba(255,255,255,.9);
+  border-radius:16px;
+  padding:7px 8px 6px;
+  width:min(99vw,560px);
+  box-shadow:0 6px 24px rgba(0,0,0,.12),0 0 0 3px rgba(255,255,255,.5);
+  z-index:5;
+  display:flex;flex-direction:column;gap:5px;
+  flex-shrink:0;
+}
+
+/* ── question shared classes ── */
+#qNum{text-align:right;font-size:.65rem;color:#ccc;line-height:1;}
+.qn{color:var(--coral);}.qp{color:var(--blue);}.qeq{color:var(--purple);}
+.qans{
+  display:inline-block;min-width:52px;
+  border-bottom:3px solid var(--purple);
+  color:var(--purple);text-align:center;
+  transition:color .3s,border-color .3s;
+}
+.qans.correct{color:var(--green);border-color:var(--green);}
+.qans.wrong  {color:var(--coral);border-color:var(--coral);animation:shake .35s ease;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+@keyframes shakeLine{0%,100%{transform:translateX(0)}15%{transform:translateX(-8px)}30%{transform:translateX(7px)}45%{transform:translateX(-6px)}60%{transform:translateX(5px)}75%{transform:translateX(-3px)}90%{transform:translateX(2px)}}
+
+/* ── frames area ── */
+#framesArea{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+}
+/* Each side: 2 frames stacked vertically */
+.side-group{
+  display:flex;flex-direction:column;gap:3px;
+}
+/* ball frame: 5×2 grid */
+.ball-frame{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:2px;padding:4px;
+  border-radius:10px;
+  border:2px solid rgba(0,0,0,.07);
+  background:rgba(0,0,0,.03);
+}
+.ball-cell{
+  border-radius:50%;
+  border:1.5px dashed #ddd;
+  aspect-ratio:1/1;
+  cursor:default;
+  transition:transform .1s;
+}
+.ball-cell.has-ball{border:none;}
+.ball-cell.ball-l{
+  background:radial-gradient(circle at 35% 35%,#ff9a9a,var(--coral));
+  box-shadow:1.5px 1.5px 4px rgba(255,107,107,.45),inset -1.5px -1.5px 3px rgba(0,0,0,.2);
+}
+.ball-cell.ball-r{
+  background:radial-gradient(circle at 35% 35%,#87b4ff,var(--blue));
+  box-shadow:1.5px 1.5px 4px rgba(77,150,255,.45),inset -1.5px -1.5px 3px rgba(0,0,0,.2);
+}
+.ball-cell.movable{
+  cursor:grab;
+  animation:glow 1.1s ease-in-out infinite;
+}
+.ball-cell.movable:active{cursor:grabbing;transform:scale(1.15);}
+@keyframes glow{
+  0%,100%{box-shadow:1.5px 1.5px 4px rgba(0,0,0,.22),0 0 0 2.5px rgba(255,215,0,.45);}
+  50%    {box-shadow:1.5px 1.5px 4px rgba(0,0,0,.22),0 0 0 5px   rgba(255,215,0,.8);}
+}
+
+/* ── plus sign ── */
+.plus-sign{
+  font-size:clamp(1.1rem,4.5vw,1.6rem);font-weight:900;color:var(--blue);
+  flex-shrink:0;
+}
+
+/* ── feedback ── */
+#feedback{
+  text-align:center;font-size:clamp(.78rem,3vw,.92rem);font-weight:900;
+  padding:5px 6px;border-radius:10px;display:none;
+  animation:fbPop .35s cubic-bezier(.175,.885,.32,1.275);
+}
+@keyframes fbPop{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+#feedback.ok{background:rgba(107,203,119,.18);color:var(--green);border:2px solid var(--green);}
+#feedback.ng{background:rgba(255,107,107,.13);color:var(--coral);border:2px solid var(--coral);}
+
+/* ── progress ── */
+#progressWrap{height:6px;background:rgba(0,0,0,.08);border-radius:4px;overflow:hidden;flex-shrink:0;}
+#progressFill{height:100%;background:linear-gradient(90deg,var(--coral),var(--orange),var(--sun));border-radius:4px;transition:width .5s cubic-bezier(.47,1.64,.41,.8);}
+
+/* ── next button (only shown after correct) ── */
+.btn-next{
+  display:none;width:100%;padding:9px 0;border:none;border-radius:12px;
+  font-family:inherit;font-weight:900;font-size:clamp(.85rem,3.2vw,1rem);
+  cursor:pointer;letter-spacing:1px;
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  color:#fff;box-shadow:0 3px 0 #2962FF;
+  transition:all .15s ease;
+}
+.btn-next:active{box-shadow:0 1px 0 #2962FF;transform:translateY(2px);}
+
+/* ── NUMBER PAD ── */
+#numPad{
+  flex-shrink:0;
+  width:min(99vw,560px);
+  background:rgba(255,255,255,.85);
+  border-radius:16px;
+  padding:7px 8px;
+  box-shadow:0 6px 24px rgba(0,0,0,.1),0 0 0 3px rgba(255,255,255,.5);
+  z-index:5;
+}
+.pad-hint{
+  text-align:center;font-size:clamp(.6rem,2.3vw,.75rem);color:#aaa;
+  margin-bottom:4px;font-weight:800;
+}
+.pad-row{display:flex;gap:5px;justify-content:center;}
+.pad-key{
+  flex:1;max-width:52px;aspect-ratio:1/1;
+  border:none;border-radius:12px;
+  font-family:inherit;font-weight:900;
+  font-size:clamp(1rem,4vw,1.4rem);
+  cursor:pointer;
+  background:linear-gradient(145deg,#fff,#eee);
+  box-shadow:0 3px 0 #ccc,0 4px 8px rgba(0,0,0,.1);
+  color:var(--dark,#2D3436);
+  transition:all .1s ease;
+}
+.pad-key:active{box-shadow:0 1px 0 #ccc;transform:translateY(2px);}
+.pad-key.zero{max-width:none;flex:2;}
+.pad-key.del{
+  background:linear-gradient(145deg,#ffe0e0,#ffcccc);
+  box-shadow:0 3px 0 #f5a5a5;
+  color:var(--coral);
+}
+.pad-key.del:active{box-shadow:0 1px 0 #f5a5a5;transform:translateY(2px);}
+
+/* ── clear card ── */
+#clearCard{
+  display:none;background:rgba(255,255,255,.9);border-radius:18px;
+  padding:18px;width:min(98vw,440px);text-align:center;
+  box-shadow:0 6px 24px rgba(0,0,0,.12);z-index:5;
+}
+.clear-emoji{font-size:3rem;animation:bounce .7s ease infinite alternate;}
+@keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-10px)}}
+.clear-title{font-size:clamp(1.1rem,5vw,1.5rem);font-weight:900;color:var(--purple);margin:6px 0 3px;}
+.clear-msg{color:#777;font-size:.85rem;margin-bottom:10px;}
+.btn{display:block;width:100%;padding:9px 0;border:none;border-radius:12px;font-family:inherit;font-weight:900;font-size:clamp(.85rem,3vw,1rem);cursor:pointer;letter-spacing:1px;transition:all .15s ease;margin-bottom:6px;}
+.btn:active{transform:scale(.97);}
+.btn-amida{background:linear-gradient(135deg,var(--orange),var(--coral));color:#fff;box-shadow:0 3px 0 #c0392b;}
+.btn-again{background:linear-gradient(135deg,var(--green),#27ae60);color:#fff;box-shadow:0 3px 0 #1e8449;}
+
+/* ── amida overlay ── */
+#amidaOverlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);
+  z-index:200;justify-content:center;align-items:center;padding:10px;
+}
+#amidaOverlay.show{display:flex;}
+.amida-card{
+  background:#fff;border-radius:20px;padding:16px 16px 14px;
+  width:min(96vw,420px);max-height:94vh;overflow-y:auto;
+  animation:slideUp .4s cubic-bezier(.175,.885,.32,1.275);text-align:center;
+}
+@keyframes slideUp{from{transform:translateY(50px);opacity:0}to{transform:translateY(0);opacity:1}}
+.amida-title{font-size:1.4rem;font-weight:900;margin-bottom:2px;}
+.amida-sub{font-size:.82rem;color:#888;margin-bottom:12px;}
+/* choice buttons */
+.amida-choices{display:flex;gap:8px;justify-content:center;margin-bottom:10px;}
+.amida-choice-btn{
+  width:58px;height:58px;border-radius:16px;border:3px solid #eee;
+  font-size:1.8rem;background:rgba(255,255,255,.9);
+  cursor:pointer;transition:all .18s ease;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 3px 0 #ddd;font-family:inherit;
+}
+.amida-choice-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #ddd;}
+.amida-choice-btn.selected{
+  border-color:var(--sun);background:rgba(255,217,61,.15);
+  box-shadow:0 3px 0 var(--orange),0 0 0 3px rgba(255,217,61,.4);
+  transform:scale(1.08);
+}
+.amida-choice-btn:disabled{cursor:default;}
+canvas#amidaCanvas{display:block;margin:0 auto;border-radius:10px;background:#f7f7f7;max-width:100%;}
+/* result row at bottom of canvas */
+.result-row{display:flex;gap:6px;justify-content:center;margin-top:8px;}
+.result-cell{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:56px;height:36px;border-radius:10px;
+  font-size:1.4rem;font-weight:900;
+  background:#f0f0f0;border:2px solid #ddd;
+  position:relative;overflow:hidden;
+  transition:all .4s cubic-bezier(.175,.885,.32,1.275);
+}
+.result-cell .cell-inner{visibility:hidden;} /* hidden until revealed */
+.result-cell.reveal .cell-inner{visibility:visible;}
+.result-cell.reveal-hit{
+  background:linear-gradient(135deg,#FFD93D,#FF9A3C);
+  border-color:var(--orange);
+  box-shadow:0 0 14px rgba(255,200,0,.6);
+  animation:popResult .5s cubic-bezier(.175,.885,.32,1.275);
+}
+.result-cell.reveal-miss{background:#f5f5f5;border-color:#ccc;}
+@keyframes popResult{0%{transform:scale(0) rotate(-15deg)}60%{transform:scale(1.2) rotate(5deg)}100%{transform:scale(1)}}
+#amidaMsg{margin-top:8px;font-size:1rem;font-weight:900;color:var(--purple);min-height:26px;}
+.btn-arun{background:linear-gradient(135deg,var(--orange),var(--coral));color:#fff;box-shadow:0 3px 0 #c0392b;margin-bottom:0;margin-top:8px;}
+.btn-arun:disabled{opacity:.5;cursor:default;}
+.btn-atry{background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff;box-shadow:0 3px 0 #2962FF;margin-top:6px;margin-bottom:0;display:none;}
+.btn-aclose{background:#eee;color:#555;margin-top:6px;margin-bottom:0;}
+
+/* ── flying ball ── */
+#flyBall{position:fixed;z-index:500;border-radius:50%;pointer-events:none;display:none;}
+
+/* ── float stars ── */
+.fstar{position:fixed;pointer-events:none;z-index:600;font-size:1.3rem;animation:flyUp 1s ease-out forwards;}
+@keyframes flyUp{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-90px) scale(.4);opacity:0}}
+
+.dragging{opacity:.3;}
+</style>
+</head>
+<body>
+
+<div class="cloud c1"></div>
+<div class="cloud c2"></div>
+
+<!-- HEADER -->
+<div id="header">
+  <div class="title">🎈 たしざんボールゲーム 🎈</div>
+  <div class="header-hint">みぎや ひだりに ボールを うごかして みてね</div>
+  <div id="starBar"></div>
+</div>
+
+<!-- GAME CARD -->
+<div id="gameCard">
+  <div id="qNum">もんだい 1 / 5</div>
+  <div id="eqArea">
+    <span id="qLine"></span>
+    <span id="eqChain"></span>
+  </div>
+
+  <!-- FRAMES -->
+  <div id="framesArea">
+    <!-- LEFT: 2 frames stacked -->
+    <div class="side-group">
+      <div class="ball-frame" id="frame-l0" data-side="l" data-fidx="0"></div>
+      <div class="ball-frame" id="frame-l1" data-side="l" data-fidx="1"></div>
+    </div>
+
+    <div class="plus-sign">＋</div>
+
+    <!-- RIGHT: 2 frames stacked -->
+    <div class="side-group">
+      <div class="ball-frame" id="frame-r0" data-side="r" data-fidx="0"></div>
+      <div class="ball-frame" id="frame-r1" data-side="r" data-fidx="1"></div>
+    </div>
+  </div>
+
+  <div id="feedback"></div>
+  <div id="progressWrap"><div id="progressFill" style="width:0%"></div></div>
+  <button class="btn-next" id="btnNext" onclick="nextQuestion()">➡️ つぎのもんだいへ</button>
+</div>
+
+<!-- NUMBER PAD -->
+<div id="numPad">
+  <div class="pad-hint">こたえの かずを おそう！</div>
+  <div class="pad-row" style="margin-bottom:5px;">
+    <button class="pad-key" onclick="padInput(1)">1</button>
+    <button class="pad-key" onclick="padInput(2)">2</button>
+    <button class="pad-key" onclick="padInput(3)">3</button>
+    <button class="pad-key" onclick="padInput(4)">4</button>
+    <button class="pad-key" onclick="padInput(5)">5</button>
+  </div>
+  <div class="pad-row">
+    <button class="pad-key" onclick="padInput(6)">6</button>
+    <button class="pad-key" onclick="padInput(7)">7</button>
+    <button class="pad-key" onclick="padInput(8)">8</button>
+    <button class="pad-key" onclick="padInput(9)">9</button>
+    <button class="pad-key" onclick="padInput(0)">0</button>
+    <button class="pad-key del" onclick="padDelete()">⌫</button>
+  </div>
+</div>
+
+<!-- CLEAR CARD -->
+<div id="clearCard">
+  <div class="clear-emoji">🏆</div>
+  <div class="clear-title">すごい！ 5もん ぜんせいかい！</div>
+  <div class="clear-msg">あみだくじに ちょうせん しよう！</div>
+  <button class="btn btn-amida" onclick="openAmida()">🎯 あみだくじ スタート！</button>
+  <button class="btn btn-again" onclick="restartGame()">🔄 もういちど</button>
+</div>
+
+<!-- AMIDA OVERLAY -->
+<div id="amidaOverlay">
+  <div class="amida-card">
+    <div class="amida-title">🎯 あみだくじ</div>
+    <div class="amida-sub" id="amidaSub">どれかな？ひとつ えらんでね！</div>
+    <!-- Top choice buttons (4 options) -->
+    <div class="amida-choices" id="amidaChoices"></div>
+    <canvas id="amidaCanvas" width="300" height="260"></canvas>
+    <!-- Bottom result cells (hidden until revealed) -->
+    <div class="result-row" id="resultRow"></div>
+    <div id="amidaMsg"></div>
+    <button class="btn btn-arun" id="btnAmidaRun" onclick="runAmida()" disabled>🚀 スタート！</button>
+    <button class="btn btn-aclose" onclick="closeAmida()">✖ とじる</button>
+  </div>
+</div>
+
+<!-- FLYING BALL -->
+<div id="flyBall"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  CELL SIZE
+// ═══════════════════════════════════════════════
+function cellSize(){
+  // Layout: card width - padding(16) - plus-sign+margins(≈44)
+  // Two side-groups, each has 1 frame wide = 5 cols
+  // Frame: 5*c + 4*2(gap) + 2*4(pad) = 5c+16
+  // Two groups: 2*(5c+16) + 44 + 16 ≤ vw
+  // 10c + 32 + 60 ≤ vw  →  c ≤ (vw-92)/10
+  const vw = Math.min(window.innerWidth, 560);
+  return Math.max(20, Math.min(38, Math.floor((vw - 92) / 10)));
+}
+
+// ═══════════════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════════════
+const NUM_Q = 5;
+let questions=[], curQ=0, score=0;
+let leftCount=0, rightCount=0, totalSum=0;
+let moving=false, answered=false;
+let userInput='';  // string typed via numpad
+
+function genQuestions(){
+  const qs=[], used=new Set();
+  while(qs.length<NUM_Q){
+    const a=Math.floor(Math.random()*9)+1;
+    const b=Math.floor(Math.random()*9)+1;
+    const s=a+b;
+    if(s<2||s>20) continue;
+    const k=`${a}+${b}`;
+    if(used.has(k)) continue;
+    used.add(k); qs.push({a,b,sum:s});
+  }
+  return qs;
+}
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+function initGame(){
+  questions=genQuestions(); curQ=0; score=0;
+  buildStars();
+  document.getElementById('gameCard').style.display='flex';
+  document.getElementById('clearCard').style.display='none';
+  document.getElementById('numPad').style.display='block';
+  loadQuestion();
+}
+
+function buildStars(){
+  const bar=document.getElementById('starBar');
+  bar.innerHTML='';
+  for(let i=0;i<NUM_Q;i++){
+    const s=document.createElement('div');
+    s.className='star-slot'; s.id=`star-${i}`; s.textContent='☆';
+    bar.appendChild(s);
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  LOAD QUESTION
+// ═══════════════════════════════════════════════
+function loadQuestion(){
+  moving=false; answered=false; userInput='';
+  const q=questions[curQ];
+  leftCount=q.a; rightCount=q.b; totalSum=q.sum;
+
+  document.getElementById('qNum').textContent=`もんだい ${curQ+1} / ${NUM_Q}`;
+  // Line 1: A ＋ B  (no ＝)
+  document.getElementById('qLine').innerHTML=
+    `<span class="qn">${q.a}</span>&nbsp;<span class="qp">＋</span>&nbsp;<span class="qn">${q.b}</span>`;
+  // Line 2: ＝？ initially
+  document.getElementById('eqChain').innerHTML=
+    `<span class="qeq">＝</span><span class="qans" id="ansBlank">？</span>`;
+
+  document.getElementById('feedback').style.display='none';
+  document.getElementById('btnNext').style.display='none';
+  document.getElementById('progressFill').style.width=(curQ/NUM_Q*100)+'%';
+  setNumPadEnabled(true);
+  renderAll();
+}
+
+// ═══════════════════════════════════════════════
+//  UPDATE EQUATION CHAIN
+// ═══════════════════════════════════════════════
+function updateEqChain(){
+  if(!questions.length) return;
+  const q=questions[curQ];
+  const chain=document.getElementById('eqChain');
+  if(!chain) return;
+  if(leftCount===q.a && rightCount===q.b){
+    // Not moved: ＝？
+    chain.innerHTML=`<span class="qeq">＝</span><span class="qans" id="ansBlank">？</span>`;
+  } else {
+    // Moved: ＝L＋R＝？
+    chain.innerHTML=
+      `<span class="qeq">＝</span>`+
+      `<span class="qn">${leftCount}</span>&nbsp;<span class="qp">＋</span>&nbsp;<span class="qn">${rightCount}</span>&nbsp;`+
+      `<span class="qeq">＝</span>&nbsp;<span class="qans" id="ansBlank">？</span>`;
+  }
+  updateBlank();
+}
+function renderAll(){
+  const cs=cellSize();
+  renderSide('l',leftCount,cs);
+  renderSide('r',rightCount,cs);
+  updateEqChain();
+}
+
+function renderSide(side,count,cs){
+  const c0=Math.min(count,10), c1=Math.max(0,count-10);
+  renderFrame(`frame-${side}0`, c0, cs, side, 0, c1===0);
+  renderFrame(`frame-${side}1`, c1, cs, side, 1, true);
+}
+
+function renderFrame(fid, count, cs, side, fidx, isLast){
+  const frame=document.getElementById(fid);
+  frame.innerHTML='';
+  frame.style.gridTemplateColumns=`repeat(5,${cs}px)`;
+  frame.style.gap='2px'; frame.style.padding='4px';
+  const bc=side==='l'?'ball-l':'ball-r';
+
+  for(let i=0;i<10;i++){
+    const div=document.createElement('div');
+    div.className='ball-cell';
+    div.style.width=cs+'px'; div.style.height=cs+'px';
+    if(i<count){
+      div.classList.add('has-ball',bc);
+      if(isLast && i===count-1 && !answered){
+        div.classList.add('movable');
+        attachBallEvents(div, side);
+      }
+    }
+    frame.appendChild(div);
+  }
+  frame.dataset.side=side; frame.dataset.fidx=fidx;
+  attachFrameDropEvents(frame, side);
+}
+
+// ═══════════════════════════════════════════════
+//  POINTER EVENTS (tap + drag unified)
+// ═══════════════════════════════════════════════
+let activeSide=null, pointerMoved=false, pointerDragging=false;
+let pStartX=0, pStartY=0;
+let dragFromSide=null;
+
+function attachBallEvents(el, side){
+  el._side=side;
+  el.addEventListener('pointerdown', onBallDown, {passive:false});
+}
+
+function onBallDown(e){
+  if(moving||answered) return;
+  e.preventDefault();
+  activeSide=e.currentTarget._side;
+  pStartX=e.clientX; pStartY=e.clientY;
+  pointerMoved=false; pointerDragging=false;
+  showFlyAt(e.currentTarget, activeSide);
+  document.addEventListener('pointermove', onPMove, {passive:false});
+  document.addEventListener('pointerup',   onPUp,   {once:true});
+}
+function onPMove(e){
+  if(!activeSide) return;
+  e.preventDefault();
+  if(!pointerMoved && (Math.abs(e.clientX-pStartX)>6||Math.abs(e.clientY-pStartY)>6)){
+    pointerMoved=true; pointerDragging=true;
+  }
+  if(pointerDragging){
+    const fb=document.getElementById('flyBall');
+    const half=parseFloat(fb.style.width)/2;
+    fb.style.left=(e.clientX-half)+'px';
+    fb.style.top =(e.clientY-half)+'px';
+  }
+}
+function onPUp(e){
+  document.removeEventListener('pointermove', onPMove);
+  const fb=document.getElementById('flyBall'); fb.style.display='none';
+  if(!activeSide||moving||answered){ activeSide=null; return; }
+  if(pointerDragging){
+    const el=document.elementFromPoint(e.clientX,e.clientY);
+    const frame=el?.closest?.('.ball-frame');
+    if(frame && frame.dataset.side && frame.dataset.side!==activeSide)
+      moveBall(activeSide);
+  } else {
+    moveBall(activeSide);
+  }
+  activeSide=null; pointerDragging=false; pointerMoved=false;
+}
+
+function attachFrameDropEvents(frame, side){
+  frame.addEventListener('dragover',e=>{
+    if(dragFromSide && dragFromSide!==side) e.preventDefault();
+  });
+  frame.addEventListener('drop',e=>{
+    e.preventDefault();
+    if(dragFromSide && dragFromSide!==side && !moving) moveBall(dragFromSide);
+  });
+}
+
+function showFlyAt(el, side){
+  const r=el.getBoundingClientRect();
+  const bc=side==='l'
+    ?'radial-gradient(circle at 35% 35%,#ff9a9a,var(--coral))'
+    :'radial-gradient(circle at 35% 35%,#87b4ff,var(--blue))';
+  const fb=document.getElementById('flyBall');
+  fb.style.cssText=`display:block;position:fixed;border-radius:50%;z-index:500;pointer-events:none;
+    width:${r.width}px;height:${r.height}px;
+    left:${r.left}px;top:${r.top}px;
+    background:${bc};box-shadow:2px 2px 6px rgba(0,0,0,.3);`;
+}
+
+// ═══════════════════════════════════════════════
+//  MOVE BALL  (arc animation)
+// ═══════════════════════════════════════════════
+function moveBall(fromSide){
+  if(moving||answered) return;
+  const toSide=fromSide==='l'?'r':'l';
+  const fromCount=fromSide==='l'?leftCount:rightCount;
+  const toCount  =toSide  ==='l'?leftCount:rightCount;
+  if(fromCount<=0||toCount>=20) return;
+  moving=true;
+
+  const srcCell=findMovable(fromSide);
+  const dstFrame=getDestFrame(toSide,toCount);
+  if(!srcCell||!dstFrame){ moving=false; return; }
+
+  const sr=srcCell.getBoundingClientRect();
+  const dr=dstFrame.getBoundingClientRect();
+  const destX=dr.left+dr.width/2 -sr.width/2;
+  const destY=dr.top +dr.height/2-sr.height/2;
+  const midX =(sr.left+destX)/2;
+  const midY =Math.min(sr.top,destY)-Math.abs(destX-sr.left)*.32-18;
+
+  const bc=fromSide==='l'
+    ?'radial-gradient(circle at 35% 35%,#ff9a9a,var(--coral))'
+    :'radial-gradient(circle at 35% 35%,#87b4ff,var(--blue))';
+  const sh=fromSide==='l'
+    ?'2px 2px 8px rgba(255,107,107,.6)'
+    :'2px 2px 8px rgba(77,150,255,.6)';
+
+  const fly=document.getElementById('flyBall');
+  fly.style.cssText=`display:block;position:fixed;border-radius:50%;z-index:500;pointer-events:none;
+    width:${sr.width}px;height:${sr.height}px;
+    left:${sr.left}px;top:${sr.top}px;
+    background:${bc};box-shadow:${sh};`;
+
+  const dur=400;
+  const bz=(t,p0,p1,p2)=>(1-t)*(1-t)*p0+2*(1-t)*t*p1+t*t*p2;
+  let t1=null;
+  function animate(now){
+    if(t1===null) t1=now;
+    const t=Math.min((now-t1)/dur,1);
+    const e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+    fly.style.left=bz(e,sr.left,midX,destX)+'px';
+    fly.style.top =bz(e,sr.top ,midY,destY)+'px';
+    fly.style.transform=`scale(${1+.18*Math.sin(Math.PI*e)})`;
+    if(t<1){ requestAnimationFrame(animate); }
+    else {
+      fly.style.display='none'; fly.style.transform='';
+      if(fromSide==='l'){leftCount--;rightCount++;}
+      else              {leftCount++;rightCount--;}
+      moving=false; renderAll();
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+function findMovable(side){
+  for(const idx of [1,0]){
+    const cells=document.getElementById(`frame-${side}${idx}`).querySelectorAll('.movable');
+    if(cells.length) return cells[cells.length-1];
+  }
+  return null;
+}
+function getDestFrame(side,count){
+  if(count<10) return document.getElementById(`frame-${side}0`);
+  if(count<20) return document.getElementById(`frame-${side}1`);
+  return null;
+}
+
+// ═══════════════════════════════════════════════
+//  NUMBER PAD
+// ═══════════════════════════════════════════════
+function setNumPadEnabled(on){
+  document.querySelectorAll('.pad-key').forEach(k=>{
+    k.disabled=!on;
+    k.style.opacity=on?'1':'.4';
+  });
+}
+
+function padInput(n){
+  if(answered) return;
+  if(userInput.length>=2) return;
+  userInput+=String(n);
+  updateBlank();
+  tryAutoCheck();
+}
+
+function updateBlank(){
+  const blank=document.getElementById('ansBlank');
+  if(!blank) return;
+  blank.textContent = userInput==='' ? '？' : userInput;
+}
+
+function padDelete(){
+  if(answered) return;
+  userInput=userInput.slice(0,-1);
+  updateBlank();
+  const blank=document.getElementById('ansBlank');
+  if(blank){ blank.className='eq-ans'; }
+  document.getElementById('feedback').style.display='none';
+}
+
+function tryAutoCheck(){
+  if(answered) return;
+  const q=questions[curQ];
+  const val=parseInt(userInput,10);
+
+  // If entered a number that can't possibly be correct (> sum) or is 2 digits → check
+  // For 1 digit: only auto-check if the number * 10 > 20 (i.e., first digit is 2 → possible 20, or ≥3 → wrong for 2-digit answers)
+  // Strategy: auto-check after 2 digits, or after 1 digit if it's clearly a final answer (value >= 1 and fits within 1 digit range of answer)
+
+  if(userInput.length===2){
+    // definitely final
+    checkAnswer();
+    return;
+  }
+  if(userInput.length===1){
+    // if answer is single digit (1-9), check immediately
+    if(q.sum<=9){
+      checkAnswer();
+    }
+    // if first digit > 2, answer can't be 2-digit valid (max 20), but could still be wrong
+    // Just let user finish typing; no auto-check for single digit when answer could be 10-20
+  }
+}
+
+function checkAnswer(){
+  if(answered) return;
+  const q=questions[curQ];
+  const val=parseInt(userInput,10);
+  const blank=document.getElementById('ansBlank');
+  const fb=document.getElementById('feedback');
+
+  if(val===q.sum){
+    // CORRECT
+    answered=true;
+    blank.className='qans correct';
+    blank.textContent=q.sum;
+    // Show correct answer in chain
+    const chain=document.getElementById('eqChain');
+    const moved=(leftCount!==q.a||rightCount!==q.b);
+    if(moved){
+      chain.innerHTML=
+        `<span class="qeq">＝</span>`+
+        `<span class="qn">${leftCount}</span>&nbsp;<span class="qp">＋</span>&nbsp;<span class="qn">${rightCount}</span>&nbsp;`+
+        `<span class="qeq">＝</span>&nbsp;<span class="qans correct">${q.sum}</span>`;
+    } else {
+      chain.innerHTML=`<span class="qeq">＝</span><span class="qans correct">${q.sum}</span>`;
+    }
+    fb.className='feedback ok';
+    fb.textContent=`🎉 せいかい！ ${q.a} ＋ ${q.b} ＝ ${q.sum} だよ！`;
+    fb.style.display='block';
+    setNumPadEnabled(false);
+    document.getElementById('btnNext').style.display='block';
+    document.getElementById('progressFill').style.width=((curQ+1)/NUM_Q*100)+'%';
+
+    score++;
+    const slot=document.getElementById(`star-${curQ}`);
+    slot.classList.add('filled'); slot.textContent='⭐';
+    spawnStars(slot);
+    // Freeze balls
+    renderAll();
+  } else {
+    // WRONG
+    blank.className='qans wrong';
+    const ql=document.getElementById('eqArea');
+    ql.style.animation='none'; void ql.offsetWidth; ql.style.animation='shakeLine .5s ease';
+    fb.className='feedback ng';
+    fb.style.display='block';
+    fb.textContent='もういっかい　ちょうせんしてみよう！🌈';
+    setTimeout(()=>{
+      if(!answered){
+        userInput=''; updateBlank();
+        blank.className='eq-ans';
+        ql.style.animation='';
+        fb.style.display='none';
+      }
+    }, 2500);
+  }
+}
+
+function spawnStars(anchor){
+  const r=anchor.getBoundingClientRect();
+  const em=['⭐','✨','🌟','💫'];
+  for(let i=0;i<6;i++){
+    const s=document.createElement('div');
+    s.className='fstar';
+    s.textContent=em[i%em.length];
+    s.style.left=(r.left+Math.random()*60-10)+'px';
+    s.style.top=r.top+'px';
+    s.style.animationDelay=(i*.07)+'s';
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(),1300);
+  }
+}
+
+function nextQuestion(){
+  curQ++;
+  if(curQ>=NUM_Q) showClear();
+  else loadQuestion();
+}
+function showClear(){
+  document.getElementById('gameCard').style.display='none';
+  document.getElementById('numPad').style.display='none';
+  document.getElementById('clearCard').style.display='block';
+}
+function restartGame(){ initGame(); }
+
+// ═══════════════════════════════════════════════
+//  AMIDA (あみだくじ)
+//  - 4 columns, 2 hits randomly placed at bottom
+//  - Player picks one column; ball animates down
+//  - Bottom results hidden until ball arrives
+// ═══════════════════════════════════════════════
+const A_COLS=4, A_ROWS=8;
+// 4 top icons to choose from
+const COL_ICONS=['🐱','🐶','🐸','🐰'];
+// 4 bottom outcomes: 2 hits (🎉 あたり) and 2 misses (💧 はずれ)
+// shuffled each game
+let amidaData=null, amidaAnim=false;
+let amidaSelectedCol=-1;  // which column user picked
+let amidaRevealed=false;
+
+const AW=300, AH=260, AMX=30, AMY=36;
+const ACW=(AW-AMX*2)/(A_COLS-1);
+const ARH=(AH-AMY*2-24)/A_ROWS;
+const ax=c=>AMX+c*ACW, ay=r=>AMY+r*ARH;
+
+function openAmida(){
+  resetAmida();
+  document.getElementById('amidaOverlay').classList.add('show');
+}
+function closeAmida(){
+  document.getElementById('amidaOverlay').classList.remove('show');
+  amidaAnim=false;
+  // あみだ終了後は計算ゲームを最初からやり直す
+  restartGame();
+}
+
+function resetAmida(){
+  amidaSelectedCol=-1;
+  amidaRevealed=false;
+  amidaAnim=false;
+  genAmida();
+  buildAmidaChoices();
+  buildResultRow();
+  drawAmida(null);
+  document.getElementById('amidaMsg').textContent='';
+  document.getElementById('amidaSub').textContent='どれかな？ひとつ えらんでね！';
+  document.getElementById('btnAmidaRun').disabled=true;
+}
+
+function genAmida(){
+  // Generate rungs
+  const rungs=[];
+  for(let r=0;r<A_ROWS;r++){
+    const row=new Array(A_COLS-1).fill(false);
+    for(let c=0;c<A_COLS-1;c++){ if(!row[c-1]) row[c]=Math.random()>.5; }
+    rungs.push(row);
+  }
+  // Place 2 hits and 2 misses at bottom, shuffled
+  const outcomes=['あたり','あたり','はずれ','はずれ'].sort(()=>Math.random()-.5);
+  amidaData={rungs, outcomes};
+}
+
+function buildAmidaChoices(){
+  const wrap=document.getElementById('amidaChoices');
+  wrap.innerHTML='';
+  for(let c=0;c<A_COLS;c++){
+    const btn=document.createElement('button');
+    btn.className='amida-choice-btn';
+    btn.textContent=COL_ICONS[c];
+    btn.dataset.col=c;
+    btn.onclick=()=>selectAmidaCol(c);
+    wrap.appendChild(btn);
+  }
+}
+
+function buildResultRow(){
+  const row=document.getElementById('resultRow');
+  row.innerHTML='';
+  for(let c=0;c<A_COLS;c++){
+    const cell=document.createElement('div');
+    cell.className='result-cell';
+    cell.id=`rc-${c}`;
+    // inner content hidden until reveal
+    const inner=document.createElement('span');
+    inner.className='cell-inner';
+    const isHit=amidaData.outcomes[c]==='あたり';
+    inner.textContent=isHit?'🎉':'💧';
+    cell.appendChild(inner);
+    row.appendChild(cell);
+  }
+}
+
+function selectAmidaCol(c){
+  if(amidaAnim||amidaRevealed) return;
+  amidaSelectedCol=c;
+  // Update button highlight
+  document.querySelectorAll('.amida-choice-btn').forEach((b,i)=>{
+    b.classList.toggle('selected', i===c);
+  });
+  document.getElementById('btnAmidaRun').disabled=false;
+  document.getElementById('amidaSub').textContent=`${COL_ICONS[c]} を えらんだね！ スタートをおそう！`;
+}
+
+function drawAmida(path, revealCol){
+  const cv=document.getElementById('amidaCanvas');
+  const ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,AW,AH);
+  if(!amidaData) return;
+  const {rungs}=amidaData;
+  const colors=['#FF6B6B','#4D96FF','#6BCB77','#FF9A3C'];
+
+  // Vertical lines
+  for(let c=0;c<A_COLS;c++){
+    ctx.strokeStyle=colors[c]; ctx.lineWidth=3; ctx.lineCap='round';
+    ctx.globalAlpha=0.35;
+    ctx.beginPath(); ctx.moveTo(ax(c),ay(0)); ctx.lineTo(ax(c),ay(A_ROWS)); ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+  // Horizontal rungs
+  for(let r=0;r<A_ROWS;r++){
+    for(let c=0;c<A_COLS-1;c++){
+      if(rungs[r][c]){
+        ctx.strokeStyle='#bbb'; ctx.lineWidth=3;
+        ctx.beginPath(); ctx.moveTo(ax(c),ay(r+.5)); ctx.lineTo(ax(c+1),ay(r+.5)); ctx.stroke();
+      }
+    }
+  }
+  // Top icons
+  for(let c=0;c<A_COLS;c++){
+    ctx.font='18px sans-serif'; ctx.textAlign='center';
+    ctx.globalAlpha = (amidaSelectedCol===-1||amidaSelectedCol===c) ? 1 : 0.3;
+    ctx.fillText(COL_ICONS[c], ax(c), ay(0)-12);
+    ctx.globalAlpha=1;
+  }
+  // Bottom: just show question marks (result cells handle reveal)
+  for(let c=0;c<A_COLS;c++){
+    ctx.font='bold 11px sans-serif'; ctx.textAlign='center';
+    ctx.fillStyle='#ccc';
+    ctx.fillText('？', ax(c), ay(A_ROWS)+16);
+  }
+
+  // Draw highlight path
+  if(path && path.length>0){
+    ctx.strokeStyle='#FFD93D'; ctx.lineWidth=5;
+    ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.shadowColor='rgba(255,217,61,.85)'; ctx.shadowBlur=9;
+    ctx.beginPath();
+    path.forEach(([px,py],i)=>i===0?ctx.moveTo(px,py):ctx.lineTo(px,py));
+    ctx.stroke(); ctx.shadowBlur=0;
+    // Ball at end
+    const [lx,ly]=path[path.length-1];
+    ctx.beginPath(); ctx.arc(lx,ly,10,0,Math.PI*2);
+    ctx.fillStyle='#FFD93D'; ctx.fill();
+    ctx.strokeStyle='#FF9A3C'; ctx.lineWidth=2.5; ctx.stroke();
+  }
+}
+
+function tracePath(sc){
+  const {rungs}=amidaData; let c=sc;
+  const path=[[ax(c),ay(0)]];
+  for(let r=0;r<A_ROWS;r++){
+    const my=ay(r)+ARH*.5;
+    path.push([ax(c),my]);
+    if(c<A_COLS-1&&rungs[r][c]){path.push([ax(c+1),my]);c++;}
+    else if(c>0&&rungs[r][c-1]){path.push([ax(c-1),my]);c--;}
+    path.push([ax(c),ay(r+1)]);
+  }
+  return{path,finalCol:c};
+}
+
+async function runAmida(){
+  if(amidaAnim||amidaSelectedCol===-1) return;
+  const sc=amidaSelectedCol;
+  const{path,finalCol}=tracePath(sc);
+  amidaAnim=true;
+  document.getElementById('btnAmidaRun').disabled=true;
+  document.querySelectorAll('.amida-choice-btn').forEach(b=>b.disabled=true);
+  document.getElementById('amidaMsg').textContent='';
+  document.getElementById('amidaSub').textContent='たどってるよ…🎯';
+
+  // Animate step by step
+  const speed=60;
+  for(let i=1;i<=path.length;i++){
+    if(!amidaAnim) break;
+    drawAmida(path.slice(0,i));
+    await new Promise(r=>setTimeout(r,speed));
+  }
+
+  amidaAnim=false;
+  amidaRevealed=true;
+
+  // Reveal destination result cell
+  const isHit=amidaData.outcomes[finalCol]==='あたり';
+  const destCell=document.getElementById(`rc-${finalCol}`);
+  destCell.classList.add('reveal', isHit?'reveal-hit':'reveal-miss');
+
+  // After short pause, reveal ALL cells
+  await new Promise(r=>setTimeout(r,700));
+  for(let c=0;c<A_COLS;c++){
+    const cell=document.getElementById(`rc-${c}`);
+    const hit=amidaData.outcomes[c]==='あたり';
+    cell.classList.add('reveal', hit?'reveal-hit':'reveal-miss');
+  }
+
+  // Final message
+  const icon=COL_ICONS[sc];
+  const msg=isHit
+    ?`🎉 ${icon} は　あたり！ やったね！🎊`
+    :`💧 ${icon} は　はずれ…　またちょうせんしてみよう！`;
+  document.getElementById('amidaMsg').textContent=msg;
+  document.getElementById('amidaSub').textContent='けっか！';
+  // 1回きり：もういちどボタンなし
+}
+
+// ═══════════════════════════════════════════════
+//  RESIZE
+// ═══════════════════════════════════════════════
+window.addEventListener('resize',()=>{ if(questions.length) renderAll(); });
+
+// ═══════════════════════════════════════════════
+//  START
+// ═══════════════════════════════════════════════
+initGame();
+</script>
+</body>
+</html>
