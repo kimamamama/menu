@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>とけいをよもう！ / Learn to Read Clocks!</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap');
+
+  :root {
+    --sky: #87CEEB;
+    --cloud: #fff;
+    --sun: #FFD700;
+    --green: #5CB85C;
+    --red: #FF4444;
+    --pink: #FF6EB4;
+    --purple: #9B59B6;
+    --orange: #FF8C00;
+    --blue: #3498DB;
+    --yellow: #FFE566;
+    --dark: #2c3e50;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: linear-gradient(180deg, #87CEEB 0%, #b8e0f7 60%, #c8f7c5 100%);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Clouds */
+  .cloud {
+    position: fixed;
+    background: white;
+    border-radius: 50px;
+    opacity: 0.85;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .cloud::before, .cloud::after {
+    content: '';
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+  }
+  .cloud1 { width: 120px; height: 40px; top: 8%; left: -10%; animation: floatCloud 22s linear infinite; }
+  .cloud1::before { width: 60px; height: 60px; top: -30px; left: 15px; }
+  .cloud1::after { width: 45px; height: 45px; top: -20px; left: 50px; }
+  .cloud2 { width: 90px; height: 30px; top: 18%; left: -10%; animation: floatCloud 30s linear infinite 8s; opacity: 0.6; }
+  .cloud2::before { width: 45px; height: 45px; top: -22px; left: 10px; }
+  .cloud2::after { width: 35px; height: 35px; top: -15px; left: 38px; }
+  .cloud3 { width: 140px; height: 45px; top: 5%; left: -10%; animation: floatCloud 18s linear infinite 4s; opacity: 0.7; }
+  .cloud3::before { width: 70px; height: 70px; top: -35px; left: 20px; }
+  .cloud3::after { width: 55px; height: 55px; top: -25px; left: 65px; }
+
+  @keyframes floatCloud {
+    0% { left: -20%; }
+    100% { left: 110%; }
+  }
+
+  /* Sun */
+  .sun {
+    position: fixed;
+    top: 20px;
+    right: 30px;
+    width: 70px;
+    height: 70px;
+    background: radial-gradient(circle, #FFE566, #FFD700);
+    border-radius: 50%;
+    box-shadow: 0 0 0 12px rgba(255,215,0,0.2), 0 0 0 24px rgba(255,215,0,0.1);
+    animation: sunPulse 3s ease-in-out infinite;
+    z-index: 0;
+  }
+  @keyframes sunPulse {
+    0%,100% { box-shadow: 0 0 0 12px rgba(255,215,0,0.2), 0 0 0 24px rgba(255,215,0,0.1); }
+    50% { box-shadow: 0 0 0 18px rgba(255,215,0,0.3), 0 0 0 36px rgba(255,215,0,0.1); }
+  }
+
+  /* Stars container */
+  #stars-container {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .star-anim {
+    position: absolute;
+    font-size: 2rem;
+    animation: starFly 1.2s ease-out forwards;
+    pointer-events: none;
+  }
+  @keyframes starFly {
+    0% { transform: scale(0) rotate(0deg); opacity: 1; }
+    50% { transform: scale(1.5) rotate(180deg); opacity: 1; }
+    100% { transform: scale(0.5) rotate(360deg) translateY(-100px); opacity: 0; }
+  }
+
+  /* Main wrapper */
+  #app {
+    position: relative;
+    z-index: 1;
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 16px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+
+  /* Title */
+  .title {
+    font-family: 'Fredoka One', cursive;
+    text-align: center;
+    line-height: 1.1;
+  }
+  .title .ja {
+    font-size: 2rem;
+    color: var(--dark);
+    text-shadow: 3px 3px 0 rgba(255,255,255,0.8);
+    display: block;
+  }
+  .title .en {
+    font-size: 1.1rem;
+    color: #555;
+    display: block;
+  }
+
+  /* Level selector */
+  .level-bar {
+    display: flex;
+    gap: 10px;
+    background: rgba(255,255,255,0.7);
+    border-radius: 50px;
+    padding: 6px 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .level-btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.95rem;
+    padding: 7px 18px;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    color: #777;
+  }
+  .level-btn.active {
+    background: linear-gradient(135deg, #FF6EB4, #FF4444);
+    color: white;
+    box-shadow: 0 4px 12px rgba(255,68,68,0.35);
+    transform: scale(1.05);
+  }
+  .level-btn:hover:not(.active) {
+    background: rgba(255,255,255,0.8);
+    color: #333;
+  }
+
+  /* Score */
+  .score-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255,255,255,0.75);
+    border-radius: 40px;
+    padding: 8px 20px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  }
+  .score-dots {
+    display: flex;
+    gap: 8px;
+  }
+  .dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 3px solid #ddd;
+    background: white;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .dot.filled {
+    background: var(--red);
+    border-color: var(--red);
+    box-shadow: 0 0 0 4px rgba(255,68,68,0.2);
+    transform: scale(1.2);
+  }
+  .score-label {
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.9rem;
+    color: #666;
+  }
+
+  /* Clock card */
+  .clock-card {
+    background: rgba(255,255,255,0.9);
+    border-radius: 30px;
+    padding: 24px 20px 20px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 0 rgba(255,255,255,0.9) inset;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+  }
+
+  /* SVG Clock */
+  #clock-svg {
+    width: 260px;
+    height: 260px;
+    filter: drop-shadow(0 8px 20px rgba(0,0,0,0.15));
+  }
+
+  /* Question text */
+  .question-box {
+    text-align: center;
+  }
+  .question-box .q-ja {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.4rem;
+    color: var(--dark);
+  }
+  .question-box .q-en {
+    font-size: 0.95rem;
+    color: #888;
+    margin-top: 2px;
+  }
+
+  /* Speak buttons */
+  .speak-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .speak-btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.9rem;
+    padding: 9px 18px;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+  }
+  .speak-btn.ja-btn {
+    background: linear-gradient(135deg, #FF6EB4, #FF4444);
+    color: white;
+  }
+  .speak-btn.en-btn {
+    background: linear-gradient(135deg, #3498DB, #2980B9);
+    color: white;
+  }
+  .speak-btn:active { transform: scale(0.95); }
+
+  /* Answer options */
+  .options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+  }
+  .option-btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.2rem;
+    padding: 16px 10px;
+    border: 3px solid #ddd;
+    border-radius: 20px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--dark);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.07);
+  }
+  .option-btn:hover:not(:disabled) {
+    border-color: var(--blue);
+    background: #EBF5FF;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(52,152,219,0.2);
+  }
+  .option-btn.correct {
+    background: linear-gradient(135deg, #5CB85C, #27AE60);
+    border-color: #27AE60;
+    color: white;
+    transform: scale(1.04);
+    box-shadow: 0 6px 18px rgba(39,174,96,0.35);
+  }
+  .option-btn.wrong {
+    background: #FFE5E5;
+    border-color: var(--red);
+    color: var(--red);
+    animation: shake 0.4s ease;
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+  }
+  .option-btn:disabled { cursor: default; }
+
+  /* Big red circle overlay */
+  #big-circle {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  #big-circle.show {
+    opacity: 1;
+  }
+  .circle-inner {
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    border: 20px solid var(--red);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    background: rgba(255,68,68,0.08);
+    animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  @keyframes popIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .circle-inner .maru { font-size: 5rem; color: var(--red); line-height: 1; }
+  .circle-inner .ci-text { font-family: 'Fredoka One', cursive; color: var(--red); font-size: 1.6rem; text-align: center; line-height: 1.4; }
+
+  /* Next btn */
+  #next-btn {
+    display: none;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    padding: 14px 40px;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(135deg, #FF6EB4, #FF4444);
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(255,68,68,0.35);
+    transition: all 0.15s;
+    margin-top: 4px;
+  }
+  #next-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(255,68,68,0.4); }
+  #next-btn.visible { display: block; }
+
+  /* Roulette Overlay */
+  #roulette-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 200;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 16px 16px 28px;
+  }
+  #roulette-overlay.show { display: flex; }
+  #roulette-canvas {
+    border-radius: 50%;
+    box-shadow: 0 0 0 8px rgba(255,255,255,0.15), 0 16px 40px rgba(0,0,0,0.5);
+    width: min(220px, 70vw);
+    height: min(220px, 70vw);
+    flex-shrink: 0;
+  }
+  .roulette-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.4rem;
+    color: white;
+    text-shadow: 0 3px 10px rgba(0,0,0,0.5);
+    text-align: center;
+    animation: bounce 0.6s ease infinite alternate;
+    flex-shrink: 0;
+  }
+  @keyframes bounce {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-8px); }
+  }
+  .roulette-result {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.4rem;
+    color: #FFE566;
+    text-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    text-align: center;
+    display: none;
+    flex-shrink: 0;
+    padding: 0 12px;
+  }
+  #spin-btn, #close-roulette {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1rem;
+    padding: 10px 28px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #spin-btn {
+    background: linear-gradient(135deg, #FFE566, #FFD700);
+    color: #333;
+    box-shadow: 0 6px 20px rgba(255,215,0,0.4);
+  }
+  #spin-btn:hover { transform: scale(1.05); }
+  #close-roulette {
+    background: rgba(255,255,255,0.15);
+    color: white;
+    border: 2px solid rgba(255,255,255,0.4);
+  }
+
+  /* Pointer for roulette */
+  .roulette-pointer {
+    font-size: 3rem;
+    color: #FF4444;
+    line-height: 1;
+    text-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    animation: none;
+  }
+  .roulette-wrap { position: relative; display: flex; flex-direction: column; align-items: center; }
+  .roulette-needle {
+    width: 0; height: 0;
+    border-left: 12px solid transparent;
+    border-right: 12px solid transparent;
+    border-top: 30px solid #FF4444;
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
+  }
+
+  /* Confetti */
+  .confetti-piece {
+    position: fixed;
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    animation: confettiFall 1.5s ease-out forwards;
+    z-index: 300;
+    pointer-events: none;
+  }
+  @keyframes confettiFall {
+    0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* Roulette trigger btn */
+  #roulette-trigger {
+    display: none;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.15rem;
+    padding: 14px 32px;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(135deg, #9B59B6, #8E44AD);
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(142,68,173,0.4);
+    animation: pulseBtn 1.5s ease infinite;
+  }
+  @keyframes pulseBtn {
+    0%,100% { box-shadow: 0 6px 20px rgba(142,68,173,0.4); }
+    50% { box-shadow: 0 10px 30px rgba(142,68,173,0.65); transform: translateY(-2px); }
+  }
+  #roulette-trigger.visible { display: block; }
+
+  /* End button */
+  #end-btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1rem;
+    padding: 10px 26px;
+    border: 3px solid rgba(255,255,255,0.7);
+    border-radius: 50px;
+    background: rgba(255,255,255,0.35);
+    color: #555;
+    cursor: pointer;
+    transition: all 0.2s;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  }
+  #end-btn:hover {
+    background: rgba(255,100,100,0.15);
+    border-color: #FF6EB4;
+    color: #c0392b;
+    transform: scale(1.04);
+  }
+
+  /* End screen */
+  #end-screen {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, #87CEEB, #b8e0f7, #c8f7c5);
+    z-index: 500;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    text-align: center;
+    padding: 30px;
+  }
+  #end-screen.show { display: flex; }
+  .end-emoji { font-size: 5rem; animation: endBounce 1s ease infinite alternate; }
+  @keyframes endBounce {
+    0% { transform: translateY(0) scale(1); }
+    100% { transform: translateY(-16px) scale(1.1); }
+  }
+  .end-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.4rem;
+    color: var(--dark);
+    text-shadow: 3px 3px 0 rgba(255,255,255,0.8);
+  }
+  .end-sub {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    color: #666;
+  }
+  .end-stats {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.6rem;
+    color: var(--red);
+    background: rgba(255,255,255,0.8);
+    border-radius: 20px;
+    padding: 16px 40px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  }
+  #restart-btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.2rem;
+    padding: 16px 48px;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(135deg, #FF6EB4, #FF4444);
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(255,68,68,0.35);
+    transition: all 0.15s;
+  }
+  #restart-btn:hover { transform: scale(1.05); }
+
+  /* Roulette back button */
+  #play-again-btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1rem;
+    padding: 10px 28px;
+    border: 2px solid rgba(255,255,255,0.45);
+    border-radius: 50px;
+    background: rgba(255,255,255,0.12);
+    color: white;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: none;
+    flex-shrink: 0;
+  }
+  #play-again-btn.show { display: block; }
+  #play-again-btn:hover { background: rgba(255,255,255,0.22); }
+
+  /* Level 3 number pad */
+  .pad-btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.3rem;
+    padding: 10px 0;
+    border: 2px solid #ddd;
+    border-radius: 14px;
+    background: white;
+    cursor: pointer;
+    color: #2c3e50;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+    transition: all 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .pad-btn:active {
+    background: #FF6EB4;
+    color: white;
+    border-color: #FF6EB4;
+    transform: scale(0.93);
+  }
+  .pad-btn:disabled { opacity: 0.4; cursor: default; }
+</style>
+</head>
+<body>
+
+<div class="cloud cloud1"></div>
+<div class="cloud cloud2"></div>
+<div class="cloud cloud3"></div>
+<div class="sun"></div>
+<div id="stars-container"></div>
+
+<div id="app">
+  <div class="title">
+    <span class="ja">🕐 なんじかな？</span>
+  </div>
+
+  <div class="level-bar">
+    <button class="level-btn active" onclick="setLevel(1)">Lv.1</button>
+    <button class="level-btn" onclick="setLevel(2)">Lv.2</button>
+    <button class="level-btn" onclick="setLevel(3)">Lv.3</button>
+    <button class="level-btn" onclick="setLevel(4)">Lv.4</button>
+  </div>
+
+  <div class="score-bar">
+    <div class="score-dots">
+      <div class="dot" id="d1"></div>
+      <div class="dot" id="d2"></div>
+      <div class="dot" id="d3"></div>
+    </div>
+    <div class="score-label" id="score-label">3つ正解でルーレット！</div>
+  </div>
+
+  <div class="clock-card">
+    <svg id="clock-svg" viewBox="0 0 320 320" width="260" height="260" xmlns="http://www.w3.org/2000/svg"></svg>
+
+    <div class="question-box">
+      <div class="q-ja" id="q-ja">なんじ なんぷん？</div>
+      <div class="q-en" id="q-en">What time is it?</div>
+    </div>
+
+    <div class="speak-row">
+      <button class="speak-btn ja-btn" onclick="speakAnswer('ja')">🔊 日本語で聞く</button>
+      <button class="speak-btn en-btn" onclick="speakAnswer('en')">🔊 Listen in English</button>
+    </div>
+
+    <div class="options-grid" id="options"></div>
+
+    <!-- Level 3: 数字パッド入力 -->
+    <div id="input-area" style="display:none; width:100%;">
+
+      <!-- 表示欄 -->
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;">
+        <div id="disp-h" style="min-width:64px;padding:6px 10px;border:3px solid #ddd;border-radius:14px;
+             font-family:'Fredoka One',cursive;font-size:1.8rem;text-align:center;
+             background:#fffdf5;color:#5a3e00;letter-spacing:2px;">？？</div>
+        <span style="font-family:'Fredoka One',cursive;font-size:1.6rem;color:#5a3e00;">じ</span>
+        <div id="disp-m" style="min-width:64px;padding:6px 10px;border:3px solid #ddd;border-radius:14px;
+             font-family:'Fredoka One',cursive;font-size:1.8rem;text-align:center;
+             background:#fffdf5;color:#5a3e00;letter-spacing:2px;">？？</div>
+        <span style="font-family:'Fredoka One',cursive;font-size:1.6rem;color:#5a3e00;">ふん</span>
+        <!-- BSボタン -->
+        <button onclick="padBackspace()" style="font-size:1.4rem;padding:4px 10px;border:2px solid #ddd;
+          border-radius:12px;background:#f5f5f5;cursor:pointer;color:#888;">⌫</button>
+      </div>
+
+      <!-- 数字パッド 1-9, 0 -->
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px;">
+        <button class="pad-btn" onclick="padInput(1)">1</button>
+        <button class="pad-btn" onclick="padInput(2)">2</button>
+        <button class="pad-btn" onclick="padInput(3)">3</button>
+        <button class="pad-btn" onclick="padInput(4)">4</button>
+        <button class="pad-btn" onclick="padInput(5)">5</button>
+        <button class="pad-btn" onclick="padInput(6)">6</button>
+        <button class="pad-btn" onclick="padInput(7)">7</button>
+        <button class="pad-btn" onclick="padInput(8)">8</button>
+        <button class="pad-btn" onclick="padInput(9)">9</button>
+        <button class="pad-btn" onclick="padInput(0)">0</button>
+      </div>
+
+      <!-- こたえるボタン & フィードバック -->
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;">
+        <button onclick="checkInputAnswer()"
+          style="font-family:'Fredoka One',cursive;font-size:1.05rem;
+                 padding:10px 28px;border:none;border-radius:50px;
+                 background:linear-gradient(135deg,#FF6EB4,#FF4444);color:white;
+                 cursor:pointer;box-shadow:0 4px 12px rgba(255,68,68,0.3);">
+          こたえる！
+        </button>
+        <div id="inp-feedback" style="font-family:'Fredoka One',cursive;
+             font-size:1rem;min-height:1.2em;"></div>
+      </div>
+    </div>
+  </div>
+
+  <button id="next-btn" onclick="nextQuestion()">つぎへ！ Next ▶</button>
+  <button id="roulette-trigger" onclick="openRoulette()">🎉 ルーレット！ Roulette!</button>
+  <button id="end-btn" onclick="showEndScreen()">🏁 おわる / End</button>
+</div>
+
+<!-- End Screen -->
+<div id="end-screen">
+  <div class="end-emoji">🎉</div>
+  <div class="end-title">よくできました！<br>Great job!</div>
+  <div class="end-sub">きょうのせいかい / Today's score</div>
+  <div class="end-stats" id="end-stats">⭐ 0 もん せいかい！</div>
+  <button id="restart-btn" onclick="restartGame()">🔄 もういちど！ Play Again!</button>
+</div>
+
+<!-- Big red circle -->
+<div id="big-circle">
+  <div class="circle-inner">
+    <div class="ci-text">せいかい！<br>Correct! ⭐</div>
+  </div>
+</div>
+
+<!-- Roulette Overlay -->
+<div id="roulette-overlay">
+  <div class="roulette-title">🎡 ルーレット！<br>🌟 Roulette Time! 🌟</div>
+  <div class="roulette-wrap">
+    <div class="roulette-needle"></div>
+    <canvas id="roulette-canvas" width="280" height="280"></canvas>
+  </div>
+  <div class="roulette-result" id="roulette-result"></div>
+  <button id="spin-btn" onclick="spinRoulette()">🌀 まわす！ SPIN!</button>
+  <button id="play-again-btn" onclick="closeRouletteAndPlay()">◀ もどる / Back</button>
+
+</div>
+
+<script>
+// ==================== STATE ====================
+let level = 1;
+let currentH = 0, currentM = 0;
+let correctAnswers = 0;
+let totalCorrect = 0;
+let answered = false;
+let rouletteUnlocked = false;
+
+// ==================== ROULETTE DATA ====================
+const rouletteItems = [
+  { ja: 'ハイタッチ！✋', en: 'High Five! ✋', color: '#FF6EB4' },
+  { ja: 'はくしゅ！👏', en: 'Clap! 👏', color: '#FF8C00' },
+  { ja: 'なでなで！🤗', en: 'Head Pat! 🤗', color: '#3498DB' },
+  { ja: 'おかし！🍬', en: 'Candy! 🍬', color: '#9B59B6' },
+  { ja: 'グータッチ！✊', en: 'Fist Bump! ✊', color: '#5CB85C' },
+  { ja: 'きゅうけい！☕', en: 'Break Time! ☕', color: '#FF7043' },
+  { ja: 'もう3もん！🌟', en: '3 More! 🌟', color: '#FFD700' },
+  { ja: 'はなまる！🌸', en: 'Flower Circle! 🌸', color: '#E91E63' },
+];
+
+// ==================== CLOCK DRAWING ====================
+function drawClock(h, m) {
+  const svg = document.getElementById('clock-svg');
+  // cx=cy=160, r=100 (clock face)
+  // outermost circle = r+50=150 → fits within 160±150=10..310 → viewBox 0 0 320 320
+  const VB = 320, cx = 160, cy = 160;
+  const r = 100;          // clock face radius
+  const bezelOuter = r + 50; // 150 — outermost gold ring (fits: 160-150=10 margin)
+  const bezelInner = r + 44; // 144 — orange ring
+  const minuteBand = r + 40; // 140 — cream band (minute numbers sit inside this)
+
+  svg.setAttribute('viewBox', `0 0 ${VB} ${VB}`);
+
+  const hRad = ((h % 12) + m / 60) / 12 * 2 * Math.PI - Math.PI / 2;
+  const mRad = m / 60 * 2 * Math.PI - Math.PI / 2;
+
+  const hLen = 48, mLen = 68;
+  const hx = cx + hLen * Math.cos(hRad);
+  const hy = cy + hLen * Math.sin(hRad);
+  const mx = cx + mLen * Math.cos(mRad);
+  const my = cy + mLen * Math.sin(mRad);
+
+  // 60 tick marks — drawn on the clock face edge
+  let ticks = '';
+  for (let i = 0; i < 60; i++) {
+    const angle = i / 60 * 2 * Math.PI - Math.PI / 2;
+    const isHour = i % 5 === 0;
+    const tickOuter = r;
+    const tickInner = isHour ? r - 12 : r - 6;
+    const x1 = cx + tickOuter * Math.cos(angle);
+    const y1 = cy + tickOuter * Math.sin(angle);
+    const x2 = cx + tickInner * Math.cos(angle);
+    const y2 = cy + tickInner * Math.sin(angle);
+    ticks += `<line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}"
+      stroke="${isHour ? '#CC8800' : '#C8A85A'}" stroke-width="${isHour ? 3 : 1.5}" stroke-linecap="round"/>`;
+  }
+
+  // Hour numbers — inside clock face
+  const hourNums = [12,1,2,3,4,5,6,7,8,9,10,11];
+  let hourTexts = '';
+  hourNums.forEach((n, i) => {
+    const angle = i / 12 * 2 * Math.PI - Math.PI / 2;
+    const nr = r - 22;
+    const x = cx + nr * Math.cos(angle);
+    const y = cy + nr * Math.sin(angle);
+    hourTexts += `<text x="${x.toFixed(2)}" y="${y.toFixed(2)}" text-anchor="middle" dominant-baseline="central"
+      font-family="Fredoka One, cursive" font-size="15" fill="#5a3e00" font-weight="bold">${n}</text>`;
+  });
+
+  // Minute numbers — in the cream band between clock face and orange ring
+  // band center radius = (r + minuteBand) / 2 = (100 + 140) / 2 = 120
+  let minuteTexts = '';
+  const minNums = [0,5,10,15,20,25,30,35,40,45,50,55];
+  minNums.forEach((mn, i) => {
+    if (mn === 0) return; // skip 60 (overlaps with 12 area)
+    const angle = i / 12 * 2 * Math.PI - Math.PI / 2;
+    const mr = r + 22; // 122 — sits in the cream band
+    const x = cx + mr * Math.cos(angle);
+    const y = cy + mr * Math.sin(angle);
+    minuteTexts += `<text x="${x.toFixed(2)}" y="${y.toFixed(2)}" text-anchor="middle" dominant-baseline="central"
+      font-family="Nunito, sans-serif" font-size="10" fill="#2471A3" font-weight="900">${mn}</text>`;
+  });
+
+  svg.innerHTML = `
+    <defs>
+      <radialGradient id="faceGrad" cx="40%" cy="35%">
+        <stop offset="0%" stop-color="#fffdf5"/>
+        <stop offset="100%" stop-color="#f0e8d0"/>
+      </radialGradient>
+      <filter id="clkShadow" x="-15%" y="-15%" width="130%" height="130%">
+        <feDropShadow dx="0" dy="5" stdDeviation="8" flood-opacity="0.18"/>
+      </filter>
+    </defs>
+    <!-- Gold outer bezel -->
+    <circle cx="${cx}" cy="${cy}" r="${bezelOuter}" fill="#FFD700" filter="url(#clkShadow)"/>
+    <!-- Orange ring -->
+    <circle cx="${cx}" cy="${cy}" r="${bezelInner}" fill="#FF8C00"/>
+    <!-- Cream minute-number band -->
+    <circle cx="${cx}" cy="${cy}" r="${minuteBand}" fill="#FFF5CC"/>
+    <!-- Clock face -->
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#faceGrad)"/>
+    <!-- 60 tick marks -->
+    ${ticks}
+    <!-- Hour numbers (inside face) -->
+    ${hourTexts}
+    <!-- Minute numbers (in cream band) -->
+    ${minuteTexts}
+    <!-- Minute hand (blue) -->
+    <line x1="${cx}" y1="${cy}" x2="${mx.toFixed(2)}" y2="${my.toFixed(2)}" stroke="#3498DB" stroke-width="6" stroke-linecap="round"/>
+    <line x1="${cx}" y1="${cy}" x2="${(cx-(mx-cx)*0.15).toFixed(2)}" y2="${(cy-(my-cy)*0.15).toFixed(2)}" stroke="#3498DB" stroke-width="6" stroke-linecap="round" opacity="0.45"/>
+    <!-- Hour hand (red) -->
+    <line x1="${cx}" y1="${cy}" x2="${hx.toFixed(2)}" y2="${hy.toFixed(2)}" stroke="#E74C3C" stroke-width="8" stroke-linecap="round"/>
+    <line x1="${cx}" y1="${cy}" x2="${(cx-(hx-cx)*0.18).toFixed(2)}" y2="${(cy-(hy-cy)*0.18).toFixed(2)}" stroke="#E74C3C" stroke-width="8" stroke-linecap="round" opacity="0.45"/>
+    <!-- Center dot -->
+    <circle cx="${cx}" cy="${cy}" r="10" fill="#E74C3C"/>
+    <circle cx="${cx}" cy="${cy}" r="5" fill="#FF9999"/>
+  `;
+}
+
+// ==================== QUESTION GENERATION ====================
+function getRandomTime() {
+  let h = Math.floor(Math.random() * 12) + 1;
+  let m;
+  if (level === 1) {
+    m = 0;
+  } else if (level === 2) {
+    m = Math.floor(Math.random() * 6) * 10;
+  } else {
+    m = Math.floor(Math.random() * 12) * 5;
+  }
+  return { h, m };
+}
+
+// Level 4: past/to/half に使える英語表現を生成
+function englishPastTo(h, m) {
+  if (m === 0)  return `${h} o'clock`;
+  if (m === 30) return `half past ${h}`;
+  if (m === 15) return `quarter past ${h}`;
+  if (m === 45) { const nh = h === 12 ? 1 : h + 1; return `quarter to ${nh}`; }
+  if (m < 30)   return `${m} past ${h}`;
+  // m > 30
+  const left = 60 - m;
+  const nh = h === 12 ? 1 : h + 1;
+  return `${left} to ${nh}`;
+}
+
+// 誤答選択肢（past/to形式）を生成
+function generateOptionsL4(correctH, correctM) {
+  const correctStr = englishPastTo(correctH, correctM);
+  const opts = new Set([correctStr]);
+  let attempts = 0;
+  while (opts.size < 4 && attempts < 60) {
+    attempts++;
+    let fh = Math.floor(Math.random() * 12) + 1;
+    let fm = Math.floor(Math.random() * 12) * 5;
+    const s = englishPastTo(fh, fm);
+    if (s !== correctStr) opts.add(s);
+  }
+  return [...opts].sort(() => Math.random() - 0.5);
+}
+
+function timeString(h, m, lang) {
+  if (lang === 'ja') {
+    if (m === 0) return `${h}じ`;
+    return `${h}じ${m}ふん`;
+  } else {
+    const period = h < 12 ? 'AM' : 'PM';
+    const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    if (m === 0) return `${h12} o'clock`;
+    const ms = m < 10 ? '0' + m : '' + m;
+    return `${h12}:${ms}`;
+  }
+}
+
+function generateOptions(correctH, correctM) {
+  const correct = `${correctH}:${correctM < 10 ? '0' + correctM : correctM}`;
+  const opts = new Set([correct]);
+  while (opts.size < 4) {
+    const { h, m } = getRandomTime();
+    const key = `${h}:${m < 10 ? '0' + m : m}`;
+    if (key !== correct) opts.add(key);
+  }
+  const arr = [...opts].sort(() => Math.random() - 0.5);
+  return arr;
+}
+
+function nextQuestion() {
+  answered = false;
+  document.getElementById('big-circle').classList.remove('show');
+  document.getElementById('next-btn').classList.remove('visible');
+
+  const { h, m } = getRandomTime();
+  currentH = h;
+  currentM = m;
+
+  drawClock(h, m);
+
+  const optionsEl = document.getElementById('options');
+  const inputArea = document.getElementById('input-area');
+
+  if (level === 3) {
+    // 入力モード
+    document.getElementById('q-ja').textContent = 'なんじ なんぷん？';
+    document.getElementById('q-en').textContent = 'What time is it? Type your answer!';
+    optionsEl.style.display = 'none';
+    inputArea.style.display = 'block';
+    // reset pad
+    padReset();
+    document.getElementById('inp-feedback').textContent = '';
+    document.getElementById('inp-feedback').style.color = '';
+    document.querySelectorAll('.pad-btn').forEach(b => b.disabled = false);
+  } else if (level === 4) {
+    // 英語 past/to/half 選択モード
+    document.getElementById('q-ja').textContent = 'えいごでなんという？';
+    document.getElementById('q-en').textContent = 'How do you say this in English?';
+    optionsEl.style.display = 'grid';
+    inputArea.style.display = 'none';
+    const opts4 = generateOptionsL4(h, m);
+    const correctStr4 = englishPastTo(h, m);
+    optionsEl.innerHTML = '';
+    opts4.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'option-btn';
+      btn.style.fontSize = '1rem';
+      btn.textContent = opt;
+      btn.onclick = () => checkAnswerL4(opt, correctStr4, btn);
+      optionsEl.appendChild(btn);
+    });
+  } else {
+    // 選択モード (Lv1/Lv2)
+    optionsEl.style.display = 'grid';
+    inputArea.style.display = 'none';
+    if (level === 1) {
+      document.getElementById('q-ja').textContent = 'なんじ？';
+      document.getElementById('q-en').textContent = 'What hour is it?';
+    } else {
+      document.getElementById('q-ja').textContent = 'なんじ なんぷん？';
+      document.getElementById('q-en').textContent = 'What time is it?';
+    }
+    const opts = generateOptions(h, m);
+    optionsEl.innerHTML = '';
+    opts.forEach(opt => {
+      const [oh, om] = opt.split(':').map(Number);
+      const btn = document.createElement('button');
+      btn.className = 'option-btn';
+      btn.innerHTML = `<span>${timeString(oh, om, 'ja')}</span><br><small style="font-size:0.7rem;color:#999">${timeString(oh, om, 'en')}</small>`;
+      btn.onclick = () => checkAnswer(oh, om, btn);
+      optionsEl.appendChild(btn);
+    });
+  }
+}
+
+// ==================== ANSWER CHECKING ====================
+function checkAnswer(h, m, btn) {
+  if (answered) return;
+  answered = true;
+
+  const allBtns = document.querySelectorAll('.option-btn');
+  allBtns.forEach(b => b.disabled = true);
+
+  const correct = (h === currentH && m === currentM);
+
+  if (correct) {
+    btn.classList.add('correct');
+    showBigCircle();
+    launchStars();
+    correctAnswers++;
+    totalCorrect++;
+    updateScore();
+
+    if (correctAnswers >= 3) {
+      rouletteUnlocked = true;
+      document.getElementById('roulette-trigger').classList.add('visible');
+      document.getElementById('score-label').textContent = '🎉 ルーレット！ Roulette!';
+    }
+  } else {
+    btn.classList.add('wrong');
+    // Show correct
+    allBtns.forEach(b => {
+      const [bh, bm] = extractTimeFromBtn(b);
+      if (bh === currentH && bm === currentM) b.classList.add('correct');
+    });
+  }
+
+  document.getElementById('next-btn').classList.add('visible');
+}
+
+function extractTimeFromBtn(btn) {
+  // Re-parse from options text
+  const text = btn.querySelector('span').textContent;
+  // Parse Japanese time string
+  const match = text.match(/(\d+)じ(?:(\d+)ふん)?/);
+  if (match) {
+    return [parseInt(match[1]), parseInt(match[2] || '0')];
+  }
+  return [0, 0];
+}
+
+// ==================== LEVEL 3 NUMBER PAD ====================
+let padState = { field: 'h', hStr: '', mStr: '' };
+
+function padReset() {
+  padState = { field: 'h', hStr: '', mStr: '' };
+  updatePadDisplay();
+}
+
+function updatePadDisplay() {
+  const dh = document.getElementById('disp-h');
+  const dm = document.getElementById('disp-m');
+  if (dh) {
+    dh.textContent = padState.hStr !== '' ? (padState.hStr.length === 1 ? '0'+padState.hStr : padState.hStr) : '？？';
+    dh.style.borderColor = padState.field === 'h' ? '#FF6EB4' : '#ddd';
+    dh.style.background = padState.field === 'h' ? '#fff0f8' : '#fffdf5';
+  }
+  if (dm) {
+    dm.textContent = padState.mStr !== '' ? (padState.mStr.length === 1 ? '0'+padState.mStr : padState.mStr) : '？？';
+    dm.style.borderColor = padState.field === 'm' ? '#3498DB' : '#ddd';
+    dm.style.background = padState.field === 'm' ? '#f0f8ff' : '#fffdf5';
+  }
+}
+
+function padInput(n) {
+  if (answered) return;
+  if (padState.field === 'h') {
+    const next = padState.hStr + String(n);
+    const num = parseInt(next);
+    if (next.length === 1 && num === 0) return; // 0始まりNG
+    if (next.length > 2) return;
+    if (num > 12) return;
+    padState.hStr = next;
+    // 2桁入力、または 2以上の1桁 → 分入力へ
+    if (next.length === 2 || (next.length === 1 && num >= 2)) {
+      padState.field = 'm';
+    }
+  } else {
+    const next = padState.mStr + String(n);
+    if (next.length > 2) return;
+    const num = parseInt(next);
+    if (num > 59) return;
+    padState.mStr = next;
+  }
+  updatePadDisplay();
+}
+
+function padBackspace() {
+  if (answered) return;
+  if (padState.field === 'm' && padState.mStr === '') {
+    padState.field = 'h';
+    padState.hStr = padState.hStr.slice(0, -1);
+  } else if (padState.field === 'm') {
+    padState.mStr = padState.mStr.slice(0, -1);
+    if (padState.mStr === '') padState.field = 'h';
+  } else {
+    padState.hStr = padState.hStr.slice(0, -1);
+  }
+  updatePadDisplay();
+}
+
+// ==================== LEVEL 3 INPUT ANSWER ====================
+function checkInputAnswer() {
+  if (answered) return;
+  const hVal = parseInt(padState.hStr);
+  const mVal = padState.mStr !== '' ? parseInt(padState.mStr) : 0;
+
+  // バリデーション
+  if (isNaN(hVal) || hVal < 1 || hVal > 12) {
+    document.getElementById('disp-h').style.borderColor = '#FF4444';
+    padState.field = 'h';
+    updatePadDisplay();
+    return;
+  }
+
+  answered = true;
+  const correct = (hVal === currentH && mVal === currentM);
+  const fb = document.getElementById('inp-feedback');
+  const dh = document.getElementById('disp-h');
+  const dm = document.getElementById('disp-m');
+
+  // パッドを無効化
+  document.querySelectorAll('.pad-btn').forEach(b => b.disabled = true);
+
+  if (correct) {
+    dh.style.borderColor = '#27AE60'; dh.style.background = '#e8f8ee';
+    dm.style.borderColor = '#27AE60'; dm.style.background = '#e8f8ee';
+    fb.textContent = '⭕ せいかい！';
+    fb.style.color = '#27AE60';
+    showBigCircle();
+    launchStars();
+    correctAnswers++;
+    totalCorrect++;
+    updateScore();
+    if (correctAnswers >= 3) {
+      rouletteUnlocked = true;
+      document.getElementById('roulette-trigger').classList.add('visible');
+      document.getElementById('score-label').textContent = '🎉 ルーレット！ Roulette!';
+    }
+  } else {
+    dh.style.borderColor = '#FF4444'; dh.style.background = '#fff0f0';
+    dm.style.borderColor = '#FF4444'; dm.style.background = '#fff0f0';
+    const correctStr = currentM === 0 ? `${currentH}じ` : `${currentH}じ ${currentM}ふん`;
+    fb.textContent = `✕ こたえは ${correctStr} だよ！`;
+    fb.style.color = '#FF4444';
+  }
+  document.getElementById('next-btn').classList.add('visible');
+}
+
+// ==================== LEVEL 4 ANSWER CHECK ====================
+function checkAnswerL4(chosen, correct, btn) {
+  if (answered) return;
+  answered = true;
+  const allBtns = document.querySelectorAll('.option-btn');
+  allBtns.forEach(b => b.disabled = true);
+
+  if (chosen === correct) {
+    btn.classList.add('correct');
+    showBigCircle();
+    launchStars();
+    // speak the correct English expression
+    const utt = new SpeechSynthesisUtterance('It is ' + correct);
+    utt.lang = 'en-US'; utt.rate = 0.82; utt.pitch = 1.1;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utt);
+    correctAnswers++;
+    totalCorrect++;
+    updateScore();
+    if (correctAnswers >= 3) {
+      rouletteUnlocked = true;
+      document.getElementById('roulette-trigger').classList.add('visible');
+      document.getElementById('score-label').textContent = '🎉 ルーレット！ Roulette!';
+    }
+  } else {
+    btn.classList.add('wrong');
+    allBtns.forEach(b => { if (b.textContent === correct) b.classList.add('correct'); });
+  }
+  document.getElementById('next-btn').classList.add('visible');
+}
+
+// ==================== SCORE ====================
+function updateScore() {
+  for (let i = 1; i <= 3; i++) {
+    const dot = document.getElementById(`d${i}`);
+    if (i <= correctAnswers % 3 || (correctAnswers > 0 && correctAnswers % 3 === 0 && i <= 3)) {
+      dot.classList.add('filled');
+    } else {
+      dot.classList.remove('filled');
+    }
+  }
+  if (correctAnswers % 3 === 0 && correctAnswers > 0) {
+    // reset after roulette unlock
+    setTimeout(() => {
+      document.getElementById('d1').classList.remove('filled');
+      document.getElementById('d2').classList.remove('filled');
+      document.getElementById('d3').classList.remove('filled');
+      correctAnswers = 0;
+      document.getElementById('score-label').textContent = '3つ正解でルーレット！';
+    }, 500);
+  }
+}
+
+// ==================== BIG CIRCLE ====================
+function showBigCircle() {
+  const el = document.getElementById('big-circle');
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 1500);
+}
+
+// ==================== STARS ====================
+function launchStars() {
+  const container = document.getElementById('stars-container');
+  const emojis = ['⭐', '✨', '🌟', '💫', '🎉'];
+  for (let i = 0; i < 12; i++) {
+    setTimeout(() => {
+      const s = document.createElement('div');
+      s.className = 'star-anim';
+      s.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      s.style.left = Math.random() * 90 + '%';
+      s.style.top = Math.random() * 70 + 10 + '%';
+      container.appendChild(s);
+      setTimeout(() => s.remove(), 1300);
+    }, i * 80);
+  }
+}
+
+// ==================== SPEECH ====================
+function speakAnswer(lang) {
+  if (!window.speechSynthesis) return;
+  const utterance = new SpeechSynthesisUtterance();
+  if (lang === 'ja') {
+    const m = currentM;
+    const hourWords = {
+      1:'いちじ',2:'にじ',3:'さんじ',4:'よじ',5:'ごじ',6:'ろくじ',
+      7:'しちじ',8:'はちじ',9:'くじ',10:'じゅうじ',11:'じゅういちじ',12:'じゅうにじ'
+    };
+    const minWords = {
+      5:'ごふん',10:'じゅっぷん',15:'じゅうごふん',20:'にじゅっぷん',
+      25:'にじゅうごふん',30:'さんじゅっぷん',35:'さんじゅうごふん',
+      40:'よんじゅっぷん',45:'よんじゅうごふん',50:'ごじゅっぷん',55:'ごじゅうごふん'
+    };
+    let text;
+    const hw = hourWords[currentH] || `${currentH}じ`;
+    if (m === 0) text = hw;
+    else text = hw + ' ' + (minWords[m] || `${m}ふん`);
+    utterance.text = text;
+    utterance.lang = 'ja-JP';
+    utterance.rate = 0.8;
+    utterance.pitch = 1.2;
+  } else {
+    const h = currentH;
+    const m = currentM;
+    let text;
+    if (level === 4) {
+      text = 'It is ' + englishPastTo(h, m);
+    } else if (m === 0) {
+      text = `It is ${h} o'clock`;
+    } else {
+      text = `It is ${h} ${m < 10 ? 'oh ' + m : m}`;
+    }
+    utterance.text = text;
+    utterance.lang = 'en-US';
+    utterance.rate = 0.82;
+    utterance.pitch = 1.1;
+  }
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+}
+
+// ==================== LEVEL ====================
+function setLevel(l) {
+  level = l;
+  document.querySelectorAll('.level-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', i === l - 1);
+  });
+  // Lv4では日本語ボタンを隠す
+  document.querySelector('.ja-btn').style.display = (l === 4) ? 'none' : '';
+  // Lv4では英語ボタンのラベルを変える
+  document.querySelector('.en-btn').innerHTML = (l === 4)
+    ? '🔊 英語で聞く / Hear it'
+    : '🔊 Listen in English';
+  nextQuestion();
+}
+
+// ==================== ROULETTE ====================
+let rouletteAngle = 0;
+let spinning = false;
+
+function drawRouletteWheel(angle) {
+  const canvas = document.getElementById('roulette-canvas');
+  const ctx = canvas.getContext('2d');
+  const cx = 140, cy = 140, r = 130;
+  const n = rouletteItems.length;
+  ctx.clearRect(0, 0, 280, 280);
+
+  for (let i = 0; i < n; i++) {
+    const start = angle + (i / n) * 2 * Math.PI;
+    const end = angle + ((i + 1) / n) * 2 * Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, end);
+    ctx.fillStyle = rouletteItems[i].color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Text
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(start + Math.PI / n);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 13px Nunito, sans-serif';
+    ctx.shadowColor = 'rgba(0,0,0,0.4)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(rouletteItems[i].ja, r - 14, 5);
+    ctx.restore();
+  }
+
+  // Center
+  ctx.beginPath();
+  ctx.arc(cx, cy, 20, 0, 2 * Math.PI);
+  ctx.fillStyle = 'white';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx, cy, 12, 0, 2 * Math.PI);
+  ctx.fillStyle = '#FF4444';
+  ctx.fill();
+}
+
+function openRoulette() {
+  document.getElementById('roulette-overlay').classList.add('show');
+  document.getElementById('roulette-result').style.display = 'none';
+  document.getElementById('spin-btn').disabled = false;
+  document.getElementById('play-again-btn').classList.remove('show');
+  rouletteAngle = 0;
+  drawRouletteWheel(rouletteAngle);
+}
+
+function closeRoulette() {
+  document.getElementById('roulette-overlay').classList.remove('show');
+  rouletteUnlocked = false;
+  document.getElementById('roulette-trigger').classList.remove('visible');
+}
+
+function spinRoulette() {
+  if (spinning) return;
+  spinning = true;
+  document.getElementById('spin-btn').disabled = true;
+  document.getElementById('roulette-result').style.display = 'none';
+
+  const totalRotation = (Math.random() * 4 + 6) * 2 * Math.PI;
+  const duration = 3500;
+  const startTime = performance.now();
+  const startAngle = rouletteAngle;
+
+  function animate(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    rouletteAngle = startAngle + totalRotation * eased;
+    drawRouletteWheel(rouletteAngle);
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      spinning = false;
+      showRouletteResult();
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+function showRouletteResult() {
+  const n = rouletteItems.length;
+  // Needle points up (top = -PI/2), find which segment is there
+  const normalizedAngle = (((-rouletteAngle - Math.PI / 2) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  const segmentIndex = Math.floor(normalizedAngle / (2 * Math.PI / n)) % n;
+  const item = rouletteItems[segmentIndex];
+
+  const resultEl = document.getElementById('roulette-result');
+  resultEl.textContent = `🎊 ${item.ja} / ${item.en} 🎊`;
+  resultEl.style.display = 'block';
+
+  document.getElementById('play-again-btn').classList.add('show');
+
+  launchConfetti();
+}
+
+function launchConfetti() {
+  const colors = ['#FF4444', '#FFD700', '#3498DB', '#5CB85C', '#FF6EB4', '#9B59B6'];
+  for (let i = 0; i < 60; i++) {
+    setTimeout(() => {
+      const c = document.createElement('div');
+      c.className = 'confetti-piece';
+      c.style.left = Math.random() * 100 + 'vw';
+      c.style.top = '-10px';
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.animationDuration = (1 + Math.random()) + 's';
+      c.style.animationDelay = Math.random() * 0.5 + 's';
+      c.style.transform = `rotate(${Math.random() * 360}deg)`;
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 2500);
+    }, i * 30);
+  }
+}
+
+// ==================== END SCREEN ====================
+function showEndScreen() {
+  window.speechSynthesis.cancel();
+  document.getElementById('end-stats').textContent = `⭐ ${totalCorrect} もん せいかい！ / ${totalCorrect} correct!`;
+  document.getElementById('end-screen').classList.add('show');
+  launchConfetti();
+}
+
+function restartGame() {
+  document.getElementById('end-screen').classList.remove('show');
+  totalCorrect = 0;
+  correctAnswers = 0;
+  rouletteUnlocked = false;
+  document.getElementById('roulette-trigger').classList.remove('visible');
+  document.getElementById('score-label').textContent = '3つ正解でルーレット！';
+  document.getElementById('d1').classList.remove('filled');
+  document.getElementById('d2').classList.remove('filled');
+  document.getElementById('d3').classList.remove('filled');
+  nextQuestion();
+}
+
+// ==================== ROULETTE PLAY AGAIN ====================
+function closeRouletteAndPlay() {
+  document.getElementById('roulette-overlay').classList.remove('show');
+  document.getElementById('play-again-btn').classList.remove('show');
+  rouletteUnlocked = false;
+  document.getElementById('roulette-trigger').classList.remove('visible');
+  document.getElementById('score-label').textContent = '3つ正解でルーレット！';
+  nextQuestion();
+}
+
+// ==================== INIT ====================
+nextQuestion();
+</script>
+</body>
+</html>
