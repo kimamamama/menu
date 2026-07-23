@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小学1年生 かんじれんしゅう ✏️</title>
+<link href="https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600&family=Yomogi&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sky1: #b8e8ff; --sky2: #e0f7ff;
+  --pink: #FF7BAC; --mint: #4ECDC4;
+  --sun:  #FFD93D; --purple: #C77DFF;
+  --orange: #FF9F43; --green: #6BCB77;
+  --card: rgba(255,255,255,0.93);
+  --shadow: 0 4px 18px rgba(0,0,0,0.10);
+  --font-edu: 'Klee One','Hiragino Mincho ProN',serif;
+  --accent: #5BB8F5;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+
+body {
+  font-family: var(--font-edu);
+  background: linear-gradient(170deg,#b8e8ff 0%,#d4f0ff 35%,#e8f9ec 70%,#c8f0c0 100%);
+  min-height: 100vh; overflow-x: hidden;
+}
+
+/* 空の装飾 */
+.sky-deco { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+.sun {
+  position:absolute; top:16px; right:40px;
+  width:64px; height:64px; border-radius:50%;
+  background:radial-gradient(circle,#ffe97a,#FFD93D);
+  box-shadow:0 0 40px #FFD93D88; animation:sunPulse 5s ease-in-out infinite;
+}
+@keyframes sunPulse { 50%{ box-shadow:0 0 70px #FFD93Daa; } }
+.cloud { position:absolute; background:#fff; border-radius:40px; opacity:.88; animation:cloudDrift linear infinite; }
+.cloud::before,.cloud::after { content:''; position:absolute; background:#fff; border-radius:50%; }
+.c1{width:100px;height:34px;top:55px;animation-duration:28s;animation-delay:0s;}
+.c1::before{width:50px;height:50px;top:-22px;left:15px;} .c1::after{width:38px;height:38px;top:-16px;left:48px;}
+.c2{width:80px;height:28px;top:100px;animation-duration:20s;animation-delay:-9s;}
+.c2::before{width:40px;height:40px;top:-18px;left:12px;} .c2::after{width:30px;height:30px;top:-12px;left:38px;}
+.c3{width:130px;height:40px;top:35px;animation-duration:34s;animation-delay:-17s;}
+.c3::before{width:60px;height:60px;top:-26px;left:20px;} .c3::after{width:48px;height:48px;top:-20px;left:62px;}
+@keyframes cloudDrift { from{left:-200px} to{left:110%} }
+
+/* 紙吹雪オーバーレイ */
+#cel { position:fixed; inset:0; pointer-events:none; z-index:9999; }
+.cp { position:absolute; top:-10px; animation:cpFall linear forwards; }
+@keyframes cpFall { to { transform:translateY(105vh) rotate(720deg); opacity:0; } }
+
+/* CONTAINER */
+.container {
+  position:relative; z-index:1;
+  max-width:700px; margin:0 auto; padding:16px 14px 40px;
+}
+
+/* HEADER */
+header { text-align:center; margin-bottom:18px; }
+.title {
+  font-family:'Yomogi',var(--font-edu);
+  font-size:clamp(1.7em,7vw,2.6em); font-weight:700;
+  background:linear-gradient(130deg,#FF7BAC,#C77DFF,#4ECDC4);
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent;
+  filter:drop-shadow(1px 2px 0 rgba(0,0,0,0.08));
+}
+.subtitle { font-size:.9em; color:#5a8a6a; font-weight:700; margin-top:3px; }
+
+/* 漢字一覧グリッド */
+.kanji-grid-wrap {
+  background:var(--card); border-radius:20px; padding:12px 10px;
+  box-shadow:var(--shadow); margin-bottom:14px;
+}
+.kanji-grid-label { font-size:.78em; color:#aaa; font-weight:700; letter-spacing:1px; margin-bottom:8px; text-align:center; }
+.kanji-grid {
+  display:flex; flex-wrap:wrap; gap:5px; justify-content:center;
+}
+.kg-btn {
+  width:36px; height:36px; border-radius:8px; border:2px solid transparent;
+  background:#f0f4f8; font-size:1.1em; font-weight:700; font-family:var(--font-edu);
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition:all .15s; color:#444;
+}
+.kg-btn:hover { background:#ddeeff; }
+.kg-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+.kg-btn.done   { background:#d4edda; color:#2d6a4f; border-color:#6BCB77; }
+
+/* MAIN PRACTICE CARD */
+.practice-card {
+  background:var(--card); border-radius:24px; padding:14px 14px 16px;
+  box-shadow:var(--shadow), 0 0 0 3px rgba(255,255,255,.6);
+}
+
+/* ── 上段：見本（左）＋ 読み（右） ── */
+.info-row {
+  display:flex; gap:12px; align-items:flex-start; margin-bottom:12px;
+}
+
+/* 見本漢字ボックス（小さめ） */
+.sample-box {
+  border:3px solid #e0e4ea; border-radius:14px;
+  background:#fff; padding:4px;
+  display:flex; align-items:center; justify-content:center;
+  width:clamp(72px,18vw,96px); height:clamp(72px,18vw,96px);
+  flex-shrink:0;
+  box-shadow:0 2px 8px rgba(0,0,0,.06);
+}
+.sample-kanji {
+  font-size:clamp(2.4em,10vw,3.8em); font-weight:600;
+  color:#2D3436; line-height:1; font-family:var(--font-edu);
+  user-select:none;
+}
+
+/* 読み＋意味エリア（右側、縦並び） */
+.readings-side {
+  flex:1; display:flex; flex-direction:column; gap:6px; min-width:0;
+}
+.readings-box {
+  background:#f8f4ff; border-radius:12px;
+  padding:7px 10px; border:2px solid #e8e0ff;
+}
+.reading-row {
+  display:flex; align-items:baseline; gap:5px;
+  margin-bottom:4px; flex-wrap:wrap;
+}
+.reading-row:last-child { margin-bottom:0; }
+.reading-type {
+  font-size:.70em; font-weight:700; flex-shrink:0;
+  padding:1px 5px; border-radius:5px; color:#fff;
+}
+.reading-type.on  { background:#FF9F43; }
+.reading-type.kun { background:#4ECDC4; }
+.reading-text {
+  font-size:.88em; color:#444; line-height:1.5; letter-spacing:.02em;
+}
+.reading-text b { font-weight:900; color:#333; }
+.reading-text .sep { font-weight:400; color:#bbb; }
+.meaning-box {
+  font-size:.74em; color:#999; font-weight:700; padding-left:2px;
+}
+
+/* ── 中段：キャンバス（大きく） ── */
+#canvasWrap {
+  position:relative; border-radius:18px; overflow:hidden;
+  border:3px solid #d0d8e8; background:#fff;
+  width:100%; aspect-ratio:1/1;
+  box-shadow:0 3px 16px rgba(0,0,0,.09);
+  touch-action:none;
+  margin-bottom:10px;
+}
+#guideCanvas, #drawCanvas {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+}
+#guideCanvas { z-index:1; }
+#drawCanvas  { z-index:2; cursor:crosshair; }
+
+/* ── 下段：色＋ふとさ＋けす ── */
+.canvas-controls {
+  display:flex; gap:7px; align-items:center; flex-wrap:wrap; justify-content:center;
+}
+.col-btn {
+  width:32px; height:32px; border-radius:50%; border:3px solid transparent;
+  cursor:pointer; transition:all .15s; flex-shrink:0;
+  box-shadow:0 1px 4px rgba(0,0,0,.15);
+}
+.col-btn.active { border-color:#555; transform:scale(1.18); }
+.ctrl-btn {
+  padding:6px 14px; border-radius:20px; border:none;
+  font-family:var(--font-edu); font-size:.82em; font-weight:700;
+  cursor:pointer; transition:all .15s;
+}
+.btn-clear { background:#ffe0e0; color:#c0392b; }
+.btn-clear:hover { background:#ffcccc; }
+.sz-wrap { display:flex; align-items:center; gap:4px; font-size:.78em; color:#888; }
+#szSlider { width:64px; accent-color:var(--accent); }
+
+/* ナビゲーション */
+.nav-row {
+  display:flex; align-items:center; justify-content:center; gap:10px; margin-top:14px;
+}
+.nav-btn {
+  width:44px; height:44px; border-radius:50%; border:none;
+  background:linear-gradient(135deg,#5BB8F5,#7eb8e8);
+  color:#fff; font-size:1.3em; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 3px 10px rgba(91,184,245,.4); transition:all .15s;
+}
+.nav-btn:hover { transform:scale(1.1); }
+.nav-label {
+  font-size:.82em; color:#777; font-weight:700; text-align:center; min-width:60px;
+}
+.done-btn {
+  padding:8px 20px; border-radius:20px; border:none;
+  background:linear-gradient(135deg,#6BCB77,#4CAF50);
+  color:#fff; font-size:.88em; font-weight:700;
+  font-family:var(--font-edu); cursor:pointer;
+  box-shadow:0 3px 10px rgba(107,203,119,.4);
+  transition:all .15s;
+}
+.done-btn:hover { transform:scale(1.05); }
+.done-btn.marked { background:linear-gradient(135deg,#aaa,#888); box-shadow:none; }
+
+/* 進捗バー */
+.progress-wrap { margin-top:14px; }
+.progress-label { display:flex; justify-content:space-between; font-size:.78em; color:#888; font-weight:700; margin-bottom:4px; }
+.progress-bar-bg { height:10px; background:#e0e0e0; border-radius:5px; overflow:hidden; }
+.progress-bar { height:100%; background:linear-gradient(90deg,#6BCB77,#4CAF50); border-radius:5px; transition:width .4s; }
+</style>
+</head>
+<body>
+
+<div class="sky-deco">
+  <div class="sun"></div>
+  <div class="cloud c1"></div>
+  <div class="cloud c2"></div>
+  <div class="cloud c3"></div>
+</div>
+<div id="cel"></div>
+
+<div class="container">
+  <header>
+    <div class="title">🌸 かんじ れんしゅう</div>
+    <div class="subtitle">小学1年生のかんじをれんしゅうしよう！</div>
+  </header>
+
+  <!-- 漢字一覧グリッド -->
+  <div class="kanji-grid-wrap">
+    <div class="kanji-grid-label">かんじをえらぼう</div>
+    <div class="kanji-grid" id="kanjiGrid"></div>
+  </div>
+
+  <!-- 書き練習カード -->
+  <div class="practice-card">
+
+    <!-- 上段：見本（左）＋ 読み（右） -->
+    <div class="info-row">
+      <div class="sample-box">
+        <div class="sample-kanji" id="sampleKanji">一</div>
+      </div>
+      <div class="readings-side">
+        <div class="readings-box" id="readingsBox"></div>
+        <div class="meaning-box" id="meaningBox"></div>
+      </div>
+    </div>
+
+    <!-- 中段：大きいキャンバス -->
+    <div id="canvasWrap">
+      <canvas id="guideCanvas"></canvas>
+      <canvas id="drawCanvas"></canvas>
+    </div>
+
+    <!-- 下段：色 + ふとさ + けす -->
+    <div class="canvas-controls">
+      <!-- ふつうの色 -->
+      <button class="col-btn active" style="background:#2D3436;" onclick="setCol('#2D3436',this)" title="くろ"></button>
+      <button class="col-btn" style="background:#2471a3;" onclick="setCol('#2471a3',this)" title="あお"></button>
+      <!-- パステルカラー -->
+      <button class="col-btn" style="background:#f48fb1;" onclick="setCol('#f48fb1',this)" title="ぴんく"></button>
+      <button class="col-btn" style="background:#ce93d8;" onclick="setCol('#ce93d8',this)" title="うすむらさき"></button>
+      <button class="col-btn" style="background:#81d4fa;" onclick="setCol('#81d4fa',this)" title="みずいろ"></button>
+      <button class="col-btn" style="background:#a5d6a7;" onclick="setCol('#a5d6a7',this)" title="きみどり"></button>
+      <!-- ふとさ -->
+      <div class="sz-wrap">ふとさ<input type="range" id="szSlider" min="4" max="24" value="10"></div>
+      <!-- けす -->
+      <button class="ctrl-btn btn-clear" onclick="clearDraw()">けす</button>
+    </div>
+
+    <div>
+
+    <!-- ナビ + できた！ボタン -->
+    <div class="nav-row">
+      <button class="nav-btn" onclick="navigate(-1)" title="まえ">◀</button>
+      <span class="nav-label" id="navLabel">1 / 80</span>
+      <button class="nav-btn" onclick="navigate(1)" title="つぎ">▶</button>
+      <button class="done-btn" id="doneBtn" onclick="markDone()">できた！⭐</button>
+    </div>
+
+    <!-- 進捗バー -->
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span>れんしゅうした かんじ</span>
+        <span id="progressText">0 / 80</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar" id="progressBar" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// =====================================================
+// DATA：小学1年生 漢字
+// on: 音読み（漢字部分^送り仮名 形式。送り仮名なければ文字列のみ）
+// kun: 訓読み（同上）
+// on / kun は配列で複数OK
+// =====================================================
+// 形式：「漢字部分」のみ太字。送り仮名を「^」のあとに書く
+// 例） 'いきる^る' → <b>いき</b>る
+//      'イチ' → <b>イチ</b>（送り仮名なし）
+// =====================================================
+const KANJIS = [
+  { k:'一', on:['イチ','イツ'], kun:['ひと^つ'], mean:'かずの１' },
+  { k:'二', on:['ニ'],          kun:['ふた^つ'], mean:'かずの２' },
+  { k:'三', on:['サン'],        kun:['み^っつ'], mean:'かずの３' },
+  { k:'四', on:['シ'],          kun:['よ^っつ','よん'], mean:'かずの４' },
+  { k:'五', on:['ゴ'],          kun:['いつ^つ'], mean:'かずの５' },
+  { k:'六', on:['ロク'],        kun:['む^っつ'], mean:'かずの６' },
+  { k:'七', on:['シチ'],        kun:['なな^つ','なの'], mean:'かずの７' },
+  { k:'八', on:['ハチ'],        kun:['やっ^つ','や'], mean:'かずの８' },
+  { k:'九', on:['キュウ','ク'], kun:['ここの^つ'], mean:'かずの９' },
+  { k:'十', on:['ジュウ','ジッ'], kun:['とお','と'], mean:'かずの１０' },
+  { k:'百', on:['ヒャク'],      kun:['もも'], mean:'かずの１００' },
+  { k:'千', on:['セン'],        kun:['ち'], mean:'かずの１０００' },
+  { k:'万', on:['マン','バン'], kun:['よろず'], mean:'かずの１まん' },
+  { k:'円', on:['エン'],        kun:['まる^い'], mean:'おかね・まるい' },
+  { k:'日', on:['ニチ','ジツ'], kun:['ひ','か'], mean:'たいよう・ひにち' },
+  { k:'月', on:['ゲツ','ガツ'], kun:['つき'], mean:'つき・ひにち' },
+  { k:'火', on:['カ'],          kun:['ひ'], mean:'ひ' },
+  { k:'水', on:['スイ'],        kun:['みず'], mean:'みず' },
+  { k:'木', on:['モク','ボク'], kun:['き','こ'], mean:'き' },
+  { k:'金', on:['キン','コン'], kun:['かね','かな'], mean:'きらきら・おかね' },
+  { k:'土', on:['ド','ト'],     kun:['つち'], mean:'つち' },
+  { k:'山', on:['サン'],        kun:['やま'], mean:'やま' },
+  { k:'川', on:['セン'],        kun:['かわ'], mean:'かわ' },
+  { k:'田', on:['デン'],        kun:['た'], mean:'たんぼ' },
+  { k:'力', on:['リョク','リキ'], kun:['ちから'], mean:'ちから' },
+  { k:'手', on:['シュ'],        kun:['て'], mean:'て' },
+  { k:'足', on:['ソク'],        kun:['あし','た^りる'], mean:'あし・じゅうぶん' },
+  { k:'口', on:['コウ','ク'],   kun:['くち'], mean:'くち' },
+  { k:'目', on:['モク','ボク'], kun:['め','ま'], mean:'め' },
+  { k:'耳', on:['ジ'],          kun:['みみ'], mean:'みみ' },
+  { k:'王', on:['オウ'],        kun:['おう'], mean:'おうさま' },
+  { k:'石', on:['セキ','シャク'], kun:['いし'], mean:'いし' },
+  { k:'竹', on:['チク'],        kun:['たけ'], mean:'たけ' },
+  { k:'花', on:['カ'],          kun:['はな'], mean:'はな' },
+  { k:'草', on:['ソウ'],        kun:['くさ'], mean:'くさ' },
+  { k:'虫', on:['チュウ'],      kun:['むし'], mean:'むし' },
+  { k:'犬', on:['ケン'],        kun:['いぬ'], mean:'いぬ' },
+  { k:'貝', on:['バイ'],        kun:['かい'], mean:'かい' },
+  { k:'林', on:['リン'],        kun:['はやし'], mean:'はやし' },
+  { k:'森', on:['シン'],        kun:['もり'], mean:'もり' },
+  { k:'空', on:['クウ'],        kun:['そら','から','あ^く'], mean:'そら' },
+  { k:'雨', on:['ウ'],          kun:['あめ','あま'], mean:'あめ' },
+  { k:'天', on:['テン'],        kun:['あめ','あま'], mean:'そら・てんごく' },
+  { k:'大', on:['ダイ','タイ'], kun:['おお^きい','おお^いに'], mean:'おおきい' },
+  { k:'小', on:['ショウ'],      kun:['ちい^さい','こ','お'], mean:'ちいさい' },
+  { k:'中', on:['チュウ'],      kun:['なか'], mean:'なか・まんなか' },
+  { k:'上', on:['ジョウ','ショウ'], kun:['うえ','うわ','かみ','あ^げる','あ^がる','のぼ^る'], mean:'うえ' },
+  { k:'下', on:['カ','ゲ'],     kun:['した','しも','もと','さ^げる','さ^がる','くだ^る'], mean:'した' },
+  { k:'左', on:['サ'],          kun:['ひだり'], mean:'ひだり' },
+  { k:'右', on:['ウ','ユウ'],   kun:['みぎ'], mean:'みぎ' },
+  { k:'男', on:['ダン','ナン'], kun:['おとこ'], mean:'おとこのひと' },
+  { k:'女', on:['ジョ','ニョ'], kun:['おんな','め'], mean:'おんなのひと' },
+  { k:'子', on:['シ','ス'],     kun:['こ','ね'], mean:'こども' },
+  { k:'人', on:['ジン','ニン'], kun:['ひと'], mean:'ひと' },
+  { k:'本', on:['ホン'],        kun:['もと'], mean:'ほん・もと' },
+  { k:'文', on:['ブン','モン'], kun:['ふみ','あや'], mean:'もじ・ぶんしょう' },
+  { k:'字', on:['ジ'],          kun:['あざ'], mean:'もじ' },
+  { k:'学', on:['ガク'],        kun:['まな^ぶ'], mean:'まなぶ' },
+  { k:'校', on:['コウ'],        kun:[], mean:'がっこう' },
+  { k:'先', on:['セン'],        kun:['さき','ま^ず'], mean:'さき・せんせい' },
+  { k:'生', on:['セイ','ショウ'], kun:['い^きる','い^かす','うまれ^る','は^える','き','なま'], mean:'いきる' },
+  { k:'年', on:['ネン'],        kun:['とし'], mean:'とし・ねん' },
+  { k:'気', on:['キ','ケ'],     kun:[], mean:'げんき・きもち' },
+  { k:'白', on:['ハク','ビャク'], kun:['しろ','しろ^い'], mean:'しろいいろ' },
+  { k:'赤', on:['セキ','シャク'], kun:['あか','あか^い','あか^らむ'], mean:'あかいろ' },
+  { k:'青', on:['セイ','ショウ'], kun:['あお','あお^い'], mean:'あおいろ' },
+  { k:'玉', on:['ギョク'],      kun:['たま'], mean:'たま' },
+  { k:'音', on:['オン','イン'], kun:['おと','ね'], mean:'おと・ね' },
+  { k:'車', on:['シャ'],        kun:['くるま'], mean:'くるま' },
+  { k:'入', on:['ニュウ'],      kun:['い^る','い^れる','はい^る'], mean:'はいる' },
+  { k:'出', on:['シュツ','スイ'], kun:['で^る','だ^す'], mean:'でる' },
+  { k:'見', on:['ケン'],        kun:['み^る','み^える','み^せる'], mean:'みる' },
+  { k:'名', on:['メイ','ミョウ'], kun:['な'], mean:'なまえ' },
+  { k:'立', on:['リツ','リュウ'], kun:['た^つ','た^てる'], mean:'たつ' },
+  { k:'正', on:['セイ','ショウ'], kun:['ただ^しい','まさ'], mean:'ただしい' },
+  { k:'早', on:['ソウ','サッ'], kun:['はや^い','はや^まる','はや^める'], mean:'はやい' },
+  { k:'糸', on:['シ'],          kun:['いと'], mean:'いと' },
+  { k:'町', on:['チョウ'],      kun:['まち'], mean:'まち' },
+  { k:'村', on:['ソン'],        kun:['むら'], mean:'むら' },
+  { k:'林', on:['リン'],        kun:['はやし'], mean:'はやし' },
+];
+
+// 重複排除
+const seenK = new Set();
+const DATA = [];
+for(const d of KANJIS){ if(!seenK.has(d.k)){ seenK.add(d.k); DATA.push(d); } }
+
+// =====================================================
+// STATE
+// =====================================================
+let currentIdx = 0;
+let doneMask   = new Array(DATA.length).fill(false);
+let drawColor  = '#2D3436';
+let isDrawing  = false, lx=0, ly=0;
+let gCanvas, dCanvas, gCtx, dCtx;
+let canvasReady = false;
+
+// =====================================================
+// 読みテキスト整形
+// 形式：'はな' → <b>はな</b>
+//       'い^きる' → <b>い</b>きる
+// =====================================================
+function formatReading(r){
+  if(r.includes('^')){
+    const [bold, oku] = r.split('^');
+    return `<b>${bold}</b>${oku}`;
+  }
+  return `<b>${r}</b>`;
+}
+
+// 音読み / 訓読みの行を作る
+function makeReadingHTML(arr){
+  return arr.map(r => formatReading(r)).join('<span class="sep">、</span>');
+}
+
+// =====================================================
+// UI 更新
+// =====================================================
+function updatePractice(){
+  const d = DATA[currentIdx];
+
+  // 見本漢字
+  document.getElementById('sampleKanji').textContent = d.k;
+
+  // 読みエリア
+  const box = document.getElementById('readingsBox');
+  box.innerHTML = '';
+
+  if(d.on && d.on.length){
+    const row = document.createElement('div');
+    row.className = 'reading-row';
+    row.innerHTML =
+      `<span class="reading-type on">音</span>` +
+      `<span class="reading-text">${makeReadingHTML(d.on)}</span>`;
+    box.appendChild(row);
+  }
+  if(d.kun && d.kun.length){
+    const row = document.createElement('div');
+    row.className = 'reading-row';
+    row.innerHTML =
+      `<span class="reading-type kun">訓</span>` +
+      `<span class="reading-text">${makeReadingHTML(d.kun)}</span>`;
+    box.appendChild(row);
+  }
+
+  // 意味
+  document.getElementById('meaningBox').textContent = d.mean;
+
+  // ナビラベル
+  document.getElementById('navLabel').textContent = `${currentIdx+1} / ${DATA.length}`;
+
+  // できた！ボタン状態
+  const db = document.getElementById('doneBtn');
+  if(doneMask[currentIdx]){
+    db.textContent = 'できた！✓'; db.classList.add('marked');
+  } else {
+    db.textContent = 'できた！⭐'; db.classList.remove('marked');
+  }
+
+  // グリッドのアクティブ更新
+  document.querySelectorAll('.kg-btn').forEach((b,i)=>{
+    b.className = 'kg-btn'+(i===currentIdx?' active':'')+(doneMask[i]?' done':'');
+  });
+
+  // キャンバス更新
+  clearDraw();
+  if(gCtx) drawGuide();
+}
+
+function updateProgress(){
+  const done = doneMask.filter(Boolean).length;
+  const pct  = done / DATA.length * 100;
+  document.getElementById('progressText').textContent = `${done} / ${DATA.length}`;
+  document.getElementById('progressBar').style.width  = pct+'%';
+}
+
+// =====================================================
+// NAVIGATE
+// =====================================================
+function navigate(dir){
+  currentIdx = (currentIdx + dir + DATA.length) % DATA.length;
+  updatePractice();
+}
+
+function goTo(idx){
+  currentIdx = idx;
+  updatePractice();
+}
+
+function markDone(){
+  doneMask[currentIdx] = true;
+  updateProgress();
+  celebrate();
+  setTimeout(()=> navigate(1), 600);
+}
+
+// =====================================================
+// KANJI GRID
+// =====================================================
+function buildGrid(){
+  const grid = document.getElementById('kanjiGrid');
+  grid.innerHTML = '';
+  DATA.forEach((d,i)=>{
+    const b = document.createElement('button');
+    b.className = 'kg-btn'+(i===0?' active':'');
+    b.textContent = d.k;
+    b.title = d.mean;
+    b.onclick = ()=> goTo(i);
+    grid.appendChild(b);
+  });
+}
+
+// =====================================================
+// CANVAS
+// =====================================================
+function initCanvas(){
+  gCanvas = document.getElementById('guideCanvas');
+  dCanvas = document.getElementById('drawCanvas');
+  const wrap = document.getElementById('canvasWrap');
+
+  function resize(){
+    const sz = wrap.clientWidth;
+    gCanvas.width = dCanvas.width = sz;
+    gCanvas.height= dCanvas.height= sz;
+    gCtx = gCanvas.getContext('2d');
+    dCtx = dCanvas.getContext('2d');
+    dCtx.lineCap = dCtx.lineJoin = 'round';
+    drawGuide();
+  }
+
+  if(!canvasReady){
+    dCanvas.addEventListener('mousedown',  e=>startD(posC(e)));
+    dCanvas.addEventListener('mousemove',  e=>doD(posC(e)));
+    dCanvas.addEventListener('mouseup',    ()=>isDrawing=false);
+    dCanvas.addEventListener('mouseleave', ()=>isDrawing=false);
+    dCanvas.addEventListener('touchstart', e=>{e.preventDefault();startD(posC(e.touches[0]));},{passive:false});
+    dCanvas.addEventListener('touchmove',  e=>{e.preventDefault();doD(posC(e.touches[0]));},{passive:false});
+    dCanvas.addEventListener('touchend',   ()=>isDrawing=false,{passive:false});
+    canvasReady = true;
+  }
+  resize();
+  new ResizeObserver(resize).observe(wrap);
+}
+
+function posC(e){
+  const r = dCanvas.getBoundingClientRect();
+  return { x:(e.clientX-r.left)*(dCanvas.width/r.width),
+           y:(e.clientY-r.top )*(dCanvas.height/r.height) };
+}
+function startD(p){ isDrawing=true; lx=p.x; ly=p.y; }
+function doD(p){
+  if(!isDrawing) return;
+  const sz = parseInt(document.getElementById('szSlider').value);
+  dCtx.strokeStyle = drawColor;
+  dCtx.lineWidth   = sz;
+  dCtx.beginPath(); dCtx.moveTo(lx,ly); dCtx.lineTo(p.x,p.y); dCtx.stroke();
+  lx=p.x; ly=p.y;
+}
+function clearDraw(){ if(dCtx) dCtx.clearRect(0,0,dCanvas.width,dCanvas.height); }
+function setCol(c,el){
+  drawColor = c;
+  document.querySelectorAll('.col-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ガイドキャンバス：十字線 + 薄い漢字
+function drawGuide(){
+  const s = gCanvas.width;
+  gCtx.clearRect(0,0,s,s);
+
+  // 外枠
+  gCtx.strokeStyle='rgba(0,0,0,0.07)'; gCtx.lineWidth=2;
+  gCtx.strokeRect(4,4,s-8,s-8);
+
+  // 十字ガイド線
+  gCtx.strokeStyle='rgba(0,0,0,0.09)'; gCtx.lineWidth=1.5;
+  gCtx.setLineDash([5,5]);
+  gCtx.beginPath(); gCtx.moveTo(s/2,4); gCtx.lineTo(s/2,s-4); gCtx.stroke();
+  gCtx.beginPath(); gCtx.moveTo(4,s/2); gCtx.lineTo(s-4,s/2); gCtx.stroke();
+  gCtx.setLineDash([]);
+
+  // 薄いなぞり文字（Klee One で教科書体に近い形）
+  const kanji = DATA[currentIdx].k;
+  gCtx.font = `600 ${s*0.74}px 'Klee One','Hiragino Mincho ProN',serif`;
+  gCtx.textAlign    = 'center';
+  gCtx.textBaseline = 'middle';
+  gCtx.fillStyle    = 'rgba(100,160,230,0.18)';
+  gCtx.fillText(kanji, s/2, s/2 + s*0.02);
+}
+
+// =====================================================
+// 紙吹雪
+// =====================================================
+function celebrate(){
+  const overlay = document.getElementById('cel');
+  const cols = ['#FF7BAC','#C77DFF','#4ECDC4','#FFD93D','#FF9F43','#6BCB77'];
+  for(let i=0;i<24;i++){
+    setTimeout(()=>{
+      const p=document.createElement('div');
+      p.className='cp';
+      p.style.left=Math.random()*100+'vw';
+      const sz=6+Math.random()*8;
+      p.style.width=sz+'px'; p.style.height=sz+'px';
+      p.style.background=cols[Math.floor(Math.random()*cols.length)];
+      p.style.borderRadius=Math.random()>.5?'50%':'2px';
+      p.style.animationDuration=(1.2+Math.random())+'s';
+      overlay.appendChild(p);
+      setTimeout(()=>p.remove(),2400);
+    },i*40);
+  }
+}
+
+// =====================================================
+// INIT
+// =====================================================
+buildGrid();
+updatePractice();
+updateProgress();
+window.addEventListener('load',()=>{ setTimeout(initCanvas,50); });
+window.addEventListener('resize',()=>{ if(gCtx) drawGuide(); });
+</script>
+</body>
+</html>
